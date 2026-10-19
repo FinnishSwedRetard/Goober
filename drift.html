@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11141f">
+  <title>Parking Lot Drift</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Courier New", monospace;
+      background: #11141f;
+      color: #f5f2e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: radial-gradient(ellipse at 50% 0%, #3a3048 0%, transparent 58%), #11141f;
+    }
+    main { width: min(100%, 900px); text-align: center; }
+    .arcade-link { display: inline-block; margin-bottom: 7px; color: #ffc66e; font-weight: 800; text-decoration: none; }
+    .arcade-link:hover { color: #ffe2a8; text-decoration: underline; }
+    .arcade-link:focus-visible { outline: 3px solid white; outline-offset: 4px; }
+    .eyebrow { margin: 0; color: #ffcc78; font-size: .72rem; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 3px 0; font-size: clamp(1.8rem, 7vw, 2.8rem); letter-spacing: -.06em; }
+    .subtitle { margin: 0 0 12px; color: #cbc5d5; font-size: .84rem; }
+    .panel { padding: 11px; border: 1px solid #625369; border-radius: 12px; background: #211e2b; box-shadow: 0 20px 58px #05060b99; }
+    .hud { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 9px; }
+    .stat { padding: 7px 4px; border: 1px solid #403b4b; border-radius: 6px; background: #191923; color: #bcb7c8; font-size: .64rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .stat strong { display: block; margin-top: 3px; color: #fff0c9; font-size: 1rem; letter-spacing: 0; }
+    .field { position: relative; overflow: hidden; border: 1px solid #524a5c; border-radius: 6px; line-height: 0; background: #282932; }
+    canvas { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; touch-action: none; }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: #12131bd9;
+      line-height: 1.45;
+    }
+    .overlay[hidden] { display: none; }
+    .card { width: min(100%, 370px); padding: 20px; border: 1px solid #786479; border-radius: 10px; background: #262332f5; box-shadow: 0 16px 50px #090910aa; }
+    .card h2 { margin: 4px 0; color: #ffdb91; font-size: 1.55rem; }
+    .card p { margin: 8px 0 14px; color: #d0cad6; font-family: "Segoe UI", sans-serif; font-size: .91rem; }
+    button { min-height: 41px; padding: 0 18px; border: 1px solid #ffcf7e; border-radius: 5px; background: #ffcf7e; color: #251c24; cursor: pointer; font: inherit; font-weight: 900; }
+    button:hover { background: #ffe4ad; }
+    button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+    .help { margin: 9px 0 0; color: #c4bdce; font-size: .75rem; line-height: 1.65; }
+    .touch { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 9px; }
+    .touch button { min-height: 39px; padding: 0 5px; border-color: #5b5263; background: #302c39; color: #fff0d1; font-size: .68rem; touch-action: none; user-select: none; }
+    .touch button:active, .touch button[aria-pressed="true"] { border-color: #ffcf7e; background: #4a3a3d; }
+    @media (min-width: 680px) { .touch { display: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="arcade-link" href="index.html">← Back to the arcade</a>
+    <p class="eyebrow">No traffic. No rules. One tiny car.</p>
+    <h1>Parking Lot Drift</h1>
+    <p class="subtitle">Slide sideways, paint the pavement, and keep your drift chain alive for a 90-second run.</p>
+    <section class="panel" aria-label="Parking Lot Drift game">
+      <div class="hud" aria-live="polite">
+        <div class="stat">Drift score<strong id="score">0</strong></div>
+        <div class="stat">Best<strong id="best">0</strong></div>
+        <div class="stat">Combo<strong id="combo">—</strong></div>
+        <div class="stat">Time<strong id="time">1:30</strong></div>
+      </div>
+      <div class="field">
+        <canvas id="field" width="800" height="600" aria-label="Drifting game. Drive with arrow keys or WASD and hold Space for a handbrake slide."></canvas>
+        <div class="overlay" id="overlay">
+          <div class="card">
+            <div id="icon" aria-hidden="true" style="font-size:2rem">🏁</div>
+            <h2 id="title">Ready to skid?</h2>
+            <p id="message">Hold ↑ or W to go. Steer with ← → or A/D. Hold Space for extra slide. Chain long drifts to score big!</p>
+            <button id="start" type="button">Start the 90-second run</button>
+          </div>
+        </div>
+      </div>
+      <div class="touch" aria-label="Driving touch controls">
+        <button type="button" data-control="left" aria-label="Steer left">◀ LEFT</button>
+        <button type="button" data-control="gas" aria-label="Accelerate">▲ GAS</button>
+        <button type="button" data-control="handbrake" aria-label="Handbrake">✦ SLIDE</button>
+        <button type="button" data-control="right" aria-label="Steer right">RIGHT ▶</button>
+      </div>
+    </section>
+    <p class="help">DRIVE <b>W</b>/<b>↑</b> · TURN <b>A/D</b> or <b>←/→</b> · REVERSE <b>S</b>/<b>↓</b> · HANDBRAKE <b>SPACE</b> · PAUSE <b>P</b></p>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+      const canvas = document.querySelector("#field");
+      const ctx = canvas.getContext("2d");
+      const overlay = document.querySelector("#overlay");
+      const startButton = document.querySelector("#start");
+      const scoreLabel = document.querySelector("#score");
+      const bestLabel = document.querySelector("#best");
+      const comboLabel = document.querySelector("#combo");
+      const timeLabel = document.querySelector("#time");
+      const iconLabel = document.querySelector("#icon");
+      const titleLabel = document.querySelector("#title");
+      const messageLabel = document.querySelector("#message");
+      const width = canvas.width;
+      const height = canvas.height;
+      const duration = 90;
+      const keys = new Set();
+      const held = new Set();
+      const carImages = Array.from({ length: 8 }, (_, index) => {
+        const image = new Image();
+        image.src = `assets/cars/Red${index + 1}.png`;
+        return image;
+      });
+      const cones = [
+        { x: 144, y: 145 }, { x: 263, y: 115 }, { x: 656, y: 145 },
+        { x: 687, y: 386 }, { x: 559, y: 473 }, { x: 133, y: 443 },
+        { x: 372, y: 100 }, { x: 473, y: 503 }
+      ];
+      const skidMarks = [];
+      let state = "ready";
+      let x = width / 2;
+      let y = height / 2;
+      let angle = -Math.PI / 2;
+      let vx = 0;
+      let vy = 0;
+      let score = 0;
+      let best = 0;
+      let remaining = duration;
+      let driftTime = 0;
+      let combo = 1;
+      let collisionTimer = 0;
+      let previousTires = null;
+      let lastTime = 0;
+      try { best = Number(localStorage.getItem("parking-lot-drift-best")) || 0; } catch { best = 0; }
+      bestLabel.textContent = best;
+
+      function reset() {
+        x = width / 2;
+        y = height / 2;
+        angle = -Math.PI / 2;
+        vx = 0;
+        vy = 0;
+        score = 0;
+        remaining = duration;
+        driftTime = 0;
+        combo = 1;
+        collisionTimer = 0;
+        previousTires = null;
+        skidMarks.length = 0;
+        updateHud();
+      }
+
+      function start() {
+        reset();
+        state = "playing";
+        overlay.hidden = true;
+        lastTime = performance.now();
+      }
+
+      function setPaused() {
+        if (state === "playing") {
+          state = "paused";
+          iconLabel.textContent = "⏸️";
+          titleLabel.textContent = "Pit stop!";
+          messageLabel.textContent = "Your drift session is paused. Catch your breath and jump back in.";
+          startButton.textContent = "Back on the track";
+          overlay.hidden = false;
+        } else if (state === "paused") {
+          state = "playing";
+          overlay.hidden = true;
+          lastTime = performance.now();
+        }
+      }
+
+      function finish() {
+        state = "over";
+        const totalScore = Math.floor(score);
+        const record = totalScore > best;
+        if (record) {
+          best = totalScore;
+          bestLabel.textContent = best;
+          try { localStorage.setItem("parking-lot-drift-best", String(best)); } catch { /* Browser storage may be disabled. */ }
+        }
+        iconLabel.textContent = record ? "🏆" : "🏁";
+        titleLabel.textContent = record ? "New track record!" : "Session over!";
+        messageLabel.textContent = `You scored ${totalScore.toLocaleString()} drift points. ${record ? "That's your new personal best!" : "Fancy another 90-second run?"}`;
+        startButton.textContent = "Drive again";
+        overlay.hidden = false;
+      }
+
+      function updateHud() {
+        scoreLabel.textContent = Math.floor(score).toLocaleString();
+        comboLabel.textContent = driftTime > 0 ? `×${combo.toFixed(1)}` : "—";
+        const seconds = Math.max(0, Math.ceil(remaining));
+        timeLabel.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+      }
+
+      function markTires() {
+        const rearX = x - Math.cos(angle) * 13;
+        const rearY = y - Math.sin(angle) * 13;
+        const sideX = Math.sin(angle) * 8;
+        const sideY = -Math.cos(angle) * 8;
+        const tires = [
+          { x: rearX + sideX, y: rearY + sideY },
+          { x: rearX - sideX, y: rearY - sideY }
+        ];
+        if (previousTires) {
+          for (let i = 0; i < tires.length; i++) {
+            skidMarks.push({ x1: previousTires[i].x, y1: previousTires[i].y, x2: tires[i].x, y2: tires[i].y });
+          }
+          if (skidMarks.length > 520) skidMarks.splice(0, skidMarks.length - 520);
+        }
+        previousTires = tires;
+      }
+
+      function update(dt) {
+        remaining -= dt;
+        if (remaining <= 0) {
+          remaining = 0;
+          updateHud();
+          finish();
+          return;
+        }
+        collisionTimer = Math.max(0, collisionTimer - dt);
+        const steering = (keys.has("ArrowRight") || keys.has("d") || held.has("right") ? 1 : 0)
+          - (keys.has("ArrowLeft") || keys.has("a") || held.has("left") ? 1 : 0);
+        const throttle = keys.has("ArrowUp") || keys.has("w") || held.has("gas");
+        const reverse = keys.has("ArrowDown") || keys.has("s");
+        const handbrake = keys.has(" ") || held.has("handbrake");
+        const speedBeforeTurn = Math.hypot(vx, vy);
+        if (throttle) {
+          vx += Math.cos(angle) * 260 * dt;
+          vy += Math.sin(angle) * 260 * dt;
+        }
+        if (reverse) {
+          vx -= Math.cos(angle) * 150 * dt;
+          vy -= Math.sin(angle) * 150 * dt;
+        }
+        let speed = Math.hypot(vx, vy);
+        if (speed > 300) {
+          vx *= 300 / speed;
+          vy *= 300 / speed;
+          speed = 300;
+        }
+        if (speed > 7 && steering) {
+          const reverseFactor = Math.cos(angle) * vx + Math.sin(angle) * vy < 0 ? -1 : 1;
+          const turnRate = .55 + Math.min(speed / 95, 2.1);
+          angle += steering * turnRate * reverseFactor * (handbrake ? 1.35 : 1) * dt;
+        }
+
+        const forwardX = Math.cos(angle);
+        const forwardY = Math.sin(angle);
+        const sideX = -forwardY;
+        const sideY = forwardX;
+        const forwardSpeed = vx * forwardX + vy * forwardY;
+        const sideSpeed = vx * sideX + vy * sideY;
+        const grip = handbrake ? .55 : 2.5;
+        const nextSideSpeed = sideSpeed * Math.exp(-grip * dt);
+        vx = (forwardX * forwardSpeed + sideX * nextSideSpeed) * Math.exp(-.33 * dt);
+        vy = (forwardY * forwardSpeed + sideY * nextSideSpeed) * Math.exp(-.33 * dt);
+        x += vx * dt;
+        y += vy * dt;
+
+        let hitWall = false;
+        if (x < 38 || x > width - 38) {
+          x = Math.max(38, Math.min(width - 38, x));
+          vx *= -.48;
+          hitWall = true;
+        }
+        if (y < 38 || y > height - 38) {
+          y = Math.max(38, Math.min(height - 38, y));
+          vy *= -.48;
+          hitWall = true;
+        }
+        const hitCone = cones.some(cone => Math.hypot(x - cone.x, y - cone.y) < 24);
+        if ((hitWall || hitCone) && collisionTimer === 0) {
+          if (hitCone) {
+            const cone = cones.find(item => Math.hypot(x - item.x, y - item.y) < 24);
+            const bump = Math.atan2(y - cone.y, x - cone.x);
+            x += Math.cos(bump) * 9;
+            y += Math.sin(bump) * 9;
+            vx = Math.cos(bump) * Math.max(45, speedBeforeTurn * .52);
+            vy = Math.sin(bump) * Math.max(45, speedBeforeTurn * .52);
+          }
+          driftTime = 0;
+          previousTires = null;
+          collisionTimer = .3;
+        }
+
+        const updatedSpeed = Math.hypot(vx, vy);
+        const forwardVelocity = vx * Math.cos(angle) + vy * Math.sin(angle);
+        const lateralVelocity = vx * -Math.sin(angle) + vy * Math.cos(angle);
+        const slip = Math.abs(Math.atan2(lateralVelocity, Math.max(1, Math.abs(forwardVelocity))));
+        const drifting = updatedSpeed > 75 && slip > .22;
+        if (drifting) {
+          driftTime += dt;
+          combo = Math.min(1 + Math.floor(driftTime / 1.8) * .2, 5);
+          score += (updatedSpeed * .045 + slip * 16) * combo * dt;
+          markTires();
+        } else {
+          driftTime = Math.max(0, driftTime - dt * 1.1);
+          if (driftTime === 0) previousTires = null;
+        }
+        updateHud();
+      }
+
+      function drawLot() {
+        ctx.fillStyle = "#292b31";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#32343a";
+        ctx.fillRect(28, 28, width - 56, height - 56);
+        ctx.strokeStyle = "#6d6b69";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([19, 16]);
+        for (let row = 0; row < 3; row++) {
+          const y0 = 178 + row * 91;
+          for (let col = 0; col < 7; col++) {
+            const x0 = 103 + col * 91;
+            ctx.strokeRect(x0, y0, 43, 62);
+          }
+        }
+        ctx.setLineDash([]);
+        ctx.strokeStyle = "#f2bf6b";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(28, 28, width - 56, height - 56);
+        ctx.strokeStyle = "#ffffff35";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(width / 2, height / 2, 295, 195, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      function drawCones() {
+        for (const cone of cones) {
+          ctx.fillStyle = "#ff9a63";
+          ctx.beginPath();
+          ctx.moveTo(cone.x, cone.y - 11);
+          ctx.lineTo(cone.x + 9, cone.y + 9);
+          ctx.lineTo(cone.x - 9, cone.y + 9);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = "#ffe5bd";
+          ctx.fillRect(cone.x - 5, cone.y + 2, 10, 3);
+          ctx.fillStyle = "#17171b";
+          ctx.fillRect(cone.x - 12, cone.y + 9, 24, 4);
+        }
+      }
+
+      function drawCar() {
+        const octant = ((Math.round(angle / (Math.PI / 4)) % 8) + 8) % 8;
+        const imageIndex = [0, 7, 6, 5, 4, 3, 2, 1][octant];
+        const image = carImages[imageIndex];
+        ctx.save();
+        ctx.translate(x, y);
+        if (image.complete && image.naturalWidth > 0) {
+          ctx.drawImage(image, -22, -26, 44, 52);
+        } else {
+          ctx.fillStyle = "#ef4242";
+          ctx.fillRect(-13, -21, 26, 42);
+          ctx.fillStyle = "#9cecf2";
+          ctx.fillRect(-9, -15, 18, 9);
+          ctx.fillRect(-9, 7, 18, 8);
+        }
+        ctx.restore();
+      }
+
+      function draw() {
+        drawLot();
+        ctx.lineCap = "round";
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#11121799";
+        for (const mark of skidMarks) {
+          ctx.beginPath();
+          ctx.moveTo(mark.x1, mark.y1);
+          ctx.lineTo(mark.x2, mark.y2);
+          ctx.stroke();
+        }
+        drawCones();
+        if (state === "playing" || state === "paused" || state === "over") drawCar();
+      }
+
+      function frame(now) {
+        const dt = Math.min((now - lastTime) / 1000, .04);
+        lastTime = now;
+        if (state === "playing") update(dt);
+        draw();
+        requestAnimationFrame(frame);
+      }
+
+      function controlName(key) {
+        return key.length === 1 ? key.toLowerCase() : key;
+      }
+
+      startButton.addEventListener("click", () => {
+        if (state === "paused") setPaused();
+        else start();
+      });
+      document.addEventListener("keydown", event => {
+        const key = controlName(event.key);
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) event.preventDefault();
+        if (key === "p" || key === "Escape") { setPaused(); return; }
+        keys.add(key);
+        if (state === "ready" && ["ArrowUp", "w"].includes(key)) start();
+      });
+      document.addEventListener("keyup", event => keys.delete(controlName(event.key)));
+      window.addEventListener("blur", () => {
+        keys.clear();
+        held.clear();
+        document.querySelectorAll(".touch button").forEach(button => button.setAttribute("aria-pressed", "false"));
+      });
+      document.querySelectorAll("[data-control]").forEach(button => {
+        const control = button.dataset.control;
+        button.addEventListener("pointerdown", event => {
+          event.preventDefault();
+          held.add(control);
+          button.setAttribute("aria-pressed", "true");
+          button.setPointerCapture(event.pointerId);
+          if (state === "ready" && control === "gas") start();
+        });
+        const release = () => {
+          held.delete(control);
+          button.setAttribute("aria-pressed", "false");
+        };
+        button.addEventListener("pointerup", release);
+        button.addEventListener("pointercancel", release);
+        button.addEventListener("lostpointercapture", release);
+      });
+
+      draw();
+      lastTime = performance.now();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

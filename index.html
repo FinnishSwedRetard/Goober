@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111021">
+  <meta name="theme-color" content="#ffffff">
   <title>Pixel Pocket Arcade</title>
   <style>
     :root {
-      color-scheme: dark;
-      font-family: "Courier New", monospace;
-      background: #111021;
-      color: #f7f1ff;
+      color-scheme: light dark;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #fff;
+      color: #161616;
       font-synthesis: none;
       text-rendering: optimizeLegibility;
     }
@@ -18,259 +18,195 @@
     body {
       min-height: 100vh;
       margin: 0;
-      overflow-x: hidden;
-      background:
-        radial-gradient(ellipse at 50% 0%, #34214f 0%, transparent 55%),
-        linear-gradient(#111021, #17132b 70%, #10101e);
+      background: #fff;
+      color: #161616;
+      transition: background-color .15s ease, color .15s ease;
     }
-    body::after {
-      position: fixed;
-      z-index: 5;
-      pointer-events: none;
-      content: "";
-      inset: 0;
-      opacity: .12;
-      background: repeating-linear-gradient(0deg, transparent 0 3px, #000 4px);
-    }
-    .shell { width: min(100% - 32px, 990px); margin: 0 auto; padding: 32px 0 28px; }
-    header { text-align: center; }
-    .coin { margin: 0; color: #72f1dc; font-size: .76rem; font-weight: 900; letter-spacing: .28em; text-transform: uppercase; }
-    h1 {
-      margin: 13px 0 7px;
-      color: #ffdc70;
-      font-size: clamp(2.1rem, 8vw, 4.4rem);
-      line-height: 1;
-      letter-spacing: -.08em;
-      text-shadow: 4px 4px 0 #8d4fbc, 7px 7px 0 #381d55;
-    }
-    .mascot {
+    .shell { width: min(100% - 32px, 820px); margin: 0 auto; padding: 34px 0; }
+    header {
       display: flex;
-      width: max-content;
-      align-items: center;
-      gap: 11px;
-      margin: 18px auto 0;
-      padding: 6px 15px 6px 6px;
-      border: 1px solid #66537f;
-      border-radius: 999px;
-      background: #211b35c9;
-      color: #ffdc70;
-      font-size: .67rem;
-      font-weight: 900;
-      letter-spacing: .12em;
-      text-align: left;
-    }
-    .mascot img {
-      display: block;
-      width: 76px;
-      height: 76px;
-      border: 2px solid #ffdc70;
-      border-radius: 50%;
-      background: white;
-      object-fit: cover;
-    }
-    .intro { max-width: 510px; margin: 15px auto 0; color: #d0c3e7; font-size: .92rem; line-height: 1.6; }
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 17px;
-      padding: 7px 11px;
-      border: 1px solid #554273;
-      border-radius: 999px;
-      background: #211b35c9;
-      color: #bfffea;
-      font-size: .72rem;
-      font-weight: 800;
-      letter-spacing: .05em;
-    }
-    .status::before { width: 8px; height: 8px; border-radius: 50%; background: #72f1a4; box-shadow: 0 0 10px #72f1a4; content: ""; }
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 31px 0 17px;
-      color: #a998c4;
-      font-size: .73rem;
-      font-weight: 900;
-      letter-spacing: .19em;
-      text-transform: uppercase;
-    }
-    .divider::before, .divider::after { height: 1px; flex: 1; background: #473454; content: ""; }
-    .library { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 17px; }
-    .game-card {
-      --accent: #72f1dc;
-      --glow: #3cdbc826;
-      display: flex;
-      min-width: 0;
-      flex-direction: column;
-      overflow: hidden;
-      border: 1px solid #57466d;
-      border-radius: 10px;
-      background: linear-gradient(155deg, #28213a, #181627 62%);
-      box-shadow: 0 12px 34px #08071188, inset 0 1px #ffffff0d;
-      transition: transform .18s ease, box-shadow .18s ease;
-    }
-    .game-card:hover { transform: translateY(-5px); box-shadow: 0 18px 38px var(--glow), 0 12px 34px #08071188; }
-    .game-card:focus-within { outline: 2px solid var(--accent); outline-offset: 4px; }
-    .art {
-      display: grid;
-      height: 153px;
-      place-items: center;
-      overflow: hidden;
-      border-bottom: 1px solid #40354f;
-      background:
-        radial-gradient(ellipse at 50% 105%, var(--glow), transparent 70%),
-        #17162a;
-    }
-    .art svg { width: 140px; height: 116px; overflow: visible; }
-    .card-copy { display: flex; flex: 1; flex-direction: column; padding: 16px; }
-    .tag { margin: 0 0 7px; color: var(--accent); font-size: .67rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-    h2 { margin: 0; font-size: 1.16rem; letter-spacing: -.04em; }
-    .description { min-height: 60px; margin: 9px 0 17px; color: #c1b9d1; font-size: .79rem; line-height: 1.55; }
-    .play {
-      display: flex;
-      min-height: 42px;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      margin-top: auto;
-      border: 1px solid #54456a;
-      border-radius: 5px;
-      background: #302744;
-      color: var(--accent);
-      font-size: .77rem;
-      font-weight: 900;
-      letter-spacing: .08em;
+      gap: 15px;
+      margin-bottom: 26px;
+    }
+    h1 { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: -.06em; }
+    .mascot { width: 58px; height: 58px; border: 1px solid #dedede; border-radius: 50%; background: #fff; object-fit: cover; }
+    .refresh {
+      position: fixed;
+      top: 13px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border: 1px solid #d5d5d5;
+      border-radius: 50%;
+      background: #fff;
+      color: #161616;
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .refresh:hover { background: #f0f0f0; }
+    .refresh:focus-visible, .game-card:focus-visible { outline: 3px solid #6176e9; outline-offset: 3px; }
+    .refresh:disabled { cursor: wait; opacity: .55; }
+    .library { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .game-card {
+      --accent: #4b60bb;
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      align-items: center;
+      gap: 15px;
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid #dedede;
+      border-radius: 10px;
+      background: #fff;
+      color: inherit;
       text-decoration: none;
-      text-transform: uppercase;
-      transition: background .15s ease, color .15s ease;
+      transition: border-color .15s ease, transform .15s ease;
     }
-    .play:hover { background: var(--accent); color: #171326; }
-    .play:focus-visible { outline: 3px solid white; outline-offset: 3px; }
-    .help {
-      margin: 26px 0 0;
-      padding: 13px 15px;
-      border: 1px dashed #4d3d60;
-      border-radius: 7px;
-      color: #bdb1ce;
-      font-size: .75rem;
-      line-height: 1.7;
-      text-align: center;
+    .game-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .game-icon {
+      display: grid;
+      width: 72px;
+      height: 72px;
+      place-items: center;
+      border-radius: 9px;
+      background: #f3f3f3;
+      font-size: 2.5rem;
     }
-    .help strong { color: #ffdc70; }
-    footer { margin-top: 20px; color: #766d89; font-size: .67rem; letter-spacing: .08em; text-align: center; }
-    @media (max-width: 720px) {
-      .shell { padding-top: 24px; }
-      .library { grid-template-columns: 1fr; gap: 13px; }
-      .game-card { display: grid; grid-template-columns: 118px minmax(0, 1fr); }
-      .art { height: 100%; min-height: 150px; border-right: 1px solid #40354f; border-bottom: 0; }
-      .art svg { width: 108px; height: 102px; }
-      .card-copy { padding: 14px; }
-      .description { min-height: 0; margin-bottom: 12px; }
+    .game-card h2 { margin: 0; color: var(--accent); font-size: 1.08rem; }
+    .description { margin: 6px 0 0; color: #555; font-size: .87rem; line-height: 1.45; }
+    .message { margin: 18px 0 0; color: #555; font-size: .9rem; text-align: center; }
+    .message:empty { display: none; }
+    @media (prefers-color-scheme: dark) {
+      :root { background: #111; color: #f3f3f3; }
+      body { background: #111; color: #f3f3f3; }
+      .mascot { border-color: #444; }
+      .refresh { border-color: #454545; background: #1c1c1c; color: #f3f3f3; }
+      .refresh:hover { background: #292929; }
+      .game-card { border-color: #414141; background: #191919; }
+      .game-icon { background: #252525; }
+      .description, .message { color: #c2c2c2; }
     }
-    @media (max-width: 390px) {
-      .shell { width: min(100% - 22px, 990px); }
-      .game-card { grid-template-columns: 94px minmax(0, 1fr); }
-      .art { min-height: 157px; }
-      .art svg { width: 88px; height: 88px; }
-      .card-copy { padding: 12px; }
-      .description { font-size: .74rem; }
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 24px, 440px); padding-top: 62px; }
+      .library { grid-template-columns: 1fr; gap: 9px; }
+      header { margin-bottom: 20px; }
     }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+    @media (max-width: 350px) {
+      .game-card { grid-template-columns: 58px minmax(0, 1fr); gap: 11px; padding: 12px; }
+      .game-icon { width: 56px; height: 56px; font-size: 2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
   <main class="shell">
     <header>
-      <p class="coin">★ Insert imagination ★</p>
-      <h1>PIXEL POCKET<br>ARCADE</h1>
-      <p class="intro">Tiny games. Zero downloads. Pick a cabinet, press play, and set a new high score.</p>
-      <span class="status">OFFLINE &amp; READY TO PLAY</span>
-      <figure class="mascot">
-        <img src="assets/mascot/oc.png" alt="The arcade owner's hand-drawn bird character wearing a little cap">
-        <figcaption>ARCADE MASCOT<br><span style="color:#c6bad8;font-weight:400;letter-spacing:.04em">PLAYER 1'S ORIGINAL CHARACTER</span></figcaption>
-      </figure>
+      <img class="mascot" src="assets/mascot/oc.png" alt="">
+      <h1>Pixel Pocket Arcade</h1>
     </header>
-
-    <div class="divider">Choose your game</div>
-    <section class="library" aria-label="Game library">
-      <article class="game-card" style="--accent:#73eddf;--glow:#3cdbc826">
-        <div class="art">
-          <svg viewBox="0 0 140 116" role="img" aria-label="Pixel spaceship flying between stars">
-            <path d="M21 23h5v5h-5zM108 18h5v5h-5zM121 79h5v5h-5zM30 91h4v4h-4z" fill="#f8df83"/>
-            <path d="M63 19h14v7H63zM56 26h28v7H56zM49 33h42v7H49zM42 40h56v7H42zM35 47h70v21H35zM42 68h56v7H42zM49 75h42v7H49zM56 82h28v7H56zM63 89h14v8H63z" fill="#73eddf"/>
-            <path d="M49 54h14v7H49zM77 54h14v7H77z" fill="#f7f1ff"/>
-            <path d="M56 97h7v9h-7zM77 97h7v9h-7z" fill="#ff916e"/>
-            <path d="M14 50h14v7H14zM21 43h7v21h-7zM112 48h14v7h-14zM112 41h7v21h-7z" fill="#bd83f6"/>
-          </svg>
-        </div>
-        <div class="card-copy">
-          <p class="tag">★ Reflex · quick rounds</p>
-          <h2>Comet Courier</h2>
-          <p class="description">Dodge space rocks, collect stardust, and see how long your ship can last.</p>
-          <a class="play" href="comet-courier.html">▶ Play now</a>
-        </div>
-      </article>
-
-      <article class="game-card" style="--accent:#ffcf68;--glow:#f4b73526">
-        <div class="art">
-          <svg viewBox="0 0 140 116" role="img" aria-label="Colorful falling block shapes">
-            <path d="M14 14h28v28H14zM42 14h28v28H42zM70 14h28v28H70zM98 14h28v28H98zM14 42h28v28H14zM42 42h28v28H42zM70 42h28v28H70zM98 42h28v28H98zM14 70h28v28H14zM42 70h28v28H42zM70 70h28v28H70zM98 70h28v28H98z" fill="#17162a" stroke="#48415c" stroke-width="2"/>
-            <path d="M16 72h24v24H16zM44 72h24v24H44z" fill="#70d8ff"/>
-            <path d="M72 72h24v24H72zM100 72h24v24h-24zM100 44h24v24h-24z" fill="#bc83f6"/>
-            <path d="M44 44h24v24H44zM72 44h24v24H72zM72 16h24v24H72z" fill="#ffcf68"/>
-            <path d="M20 76h16v4H20zM48 48h16v4H48zM76 20h16v4H76z" fill="#fff4c6"/>
-          </svg>
-        </div>
-        <div class="card-copy">
-          <p class="tag">★ Puzzle · one more line</p>
-          <h2>Mini Tetris</h2>
-          <p class="description">Fit the falling blocks together, clear lines, and climb through the levels.</p>
-          <a class="play" href="tetris.html">▶ Play now</a>
-        </div>
-      </article>
-
-      <article class="game-card" style="--accent:#8ef0a9;--glow:#48da7426">
-        <div class="art">
-          <svg viewBox="0 0 140 116" role="img" aria-label="Pixel snake chasing a bright red apple">
-            <path d="M48 16h35v7H48zM41 23h49v7H41zM41 30h56v7H41zM48 37h42v7H48z" fill="#ff7185"/>
-            <path d="M62 12h7v7h-7zM69 9h14v7H69z" fill="#8ef0a9"/>
-            <path d="M28 53h28v28H28zM56 53h28v28H56zM84 53h28v28H84zM84 81h28v21H84zM56 81h28v21H56z" fill="#42cd85"/>
-            <path d="M35 60h14v14H35zM63 60h14v14H63zM91 60h14v14H91zM91 88h14v7H91zM63 88h14v7H63z" fill="#8ef0a9"/>
-            <path d="M46 62h7v7h-7zM102 62h7v7h-7z" fill="#183b32"/>
-            <path d="M18 90h21v7H18zM11 83h7v21h-7zM14 58h7v7h-7zM119 30h7v7h-7z" fill="#f6dc83"/>
-          </svg>
-        </div>
-        <div class="card-copy">
-          <p class="tag">★ Classic · snack break</p>
-          <h2>Snack Snake</h2>
-          <p class="description">Chase snacks, grow longer, and avoid a tail-chasing collision.</p>
-          <a class="play" href="snake.html">▶ Play now</a>
-        </div>
-      </article>
-
-      <article class="game-card" style="--accent:#ffbd71;--glow:#ef805526">
-        <div class="art">
-          <svg viewBox="0 0 140 116" role="img" aria-label="Red pixel car drifting with tire smoke">
-            <path d="M21 29h5v5h-5zM31 20h7v7h-7zM107 26h8v8h-8zM118 18h5v5h-5z" fill="#e1d9d0"/>
-            <path d="M45 47h49v7H45zM38 54h63v7H38zM31 61h77v21H31zM38 82h63v7H38zM45 89h49v7H45z" fill="#ef5350"/>
-            <path d="M45 54h14v7H45zM80 54h14v7H80z" fill="#b8f1eb"/>
-            <path d="M31 68h7v7h-7zM101 68h7v7h-7z" fill="#28232d"/>
-            <path d="M21 47h14v7H21zM14 54h14v21H14zM108 82h14v7h-14zM115 75h14v21h-14z" fill="#ffbd71"/>
-            <path d="M31 96h14v7H31zM94 96h14v7H94z" fill="#e1d9d0"/>
-          </svg>
-        </div>
-        <div class="card-copy">
-          <p class="tag">★ Driving · 90-second runs</p>
-          <h2>Parking Lot Drift</h2>
-          <p class="description">Slide a little red car around the lot, leave skid marks, and build drift combos.</p>
-          <a class="play" href="drift.html">▶ Play now</a>
-        </div>
-      </article>
-    </section>
-
-    <p class="help"><strong>HOW TO PLAY:</strong> Use the keyboard or touch controls. Your best scores are saved in this browser when storage is available. Everything runs on this device; no internet needed.</p>
-    <footer>MADE FOR THE IN-BETWEEN MOMENTS · PLAYER 1, YOU'RE UP</footer>
+    <button class="refresh" id="refresh" type="button" aria-label="Check for new games" title="Check for new games">↻</button>
+    <nav class="library" id="games" aria-label="Games"></nav>
+    <p class="message" id="message" role="status" aria-live="polite"></p>
   </main>
+  <script>
+    (() => {
+      "use strict";
+      const library = document.querySelector("#games");
+      const message = document.querySelector("#message");
+      const refreshButton = document.querySelector("#refresh");
+      const colors = ["#485fba", "#a44c42", "#277a51", "#995c16", "#7650a4", "#197c86"];
+      let catalogRevision = Date.now().toString();
+
+      function showError(error) {
+        console.error("Could not load the arcade game list:", error);
+        message.textContent = "Could not load games. Check your connection and try again.";
+      }
+
+      function validateCatalog(catalog) {
+        if (!Array.isArray(catalog)) throw new Error("The game list must be an array.");
+        const ids = new Set();
+        return catalog.map((game, index) => {
+          if (!game || typeof game !== "object") throw new Error(`Game ${index + 1} must be an object.`);
+          const { id, title, description, href, icon } = game;
+          if (typeof id !== "string" || !/^[a-z0-9-]+$/.test(id) || ids.has(id)) {
+            throw new Error(`Game ${index + 1} has an invalid or duplicate ID.`);
+          }
+          if (typeof title !== "string" || !title.trim()) throw new Error(`Game "${id}" needs a title.`);
+          if (typeof description !== "string" || !description.trim()) throw new Error(`Game "${id}" needs a description.`);
+          if (typeof href !== "string" || !/^[a-zA-Z0-9_./-]+\.html$/.test(href) || href.includes("..")) {
+            throw new Error(`Game "${id}" needs a relative HTML file path.`);
+          }
+          if (typeof icon !== "string" || !icon.trim() || icon.length > 12) throw new Error(`Game "${id}" needs a short icon.`);
+          const url = new URL(href, new URL("./", location.href));
+          if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", location.href).pathname)) {
+            throw new Error(`Game "${id}" must link to a local HTML file.`);
+          }
+          ids.add(id);
+          return { id, title: title.trim(), description: description.trim(), href, icon: icon.trim() };
+        });
+      }
+
+      function renderGames(games) {
+        const fragment = document.createDocumentFragment();
+        games.forEach((game, index) => {
+          const link = document.createElement("a");
+          link.className = "game-card";
+          link.href = game.href;
+          link.search = `?v=${encodeURIComponent(catalogRevision)}`;
+          link.style.setProperty("--accent", colors[index % colors.length]);
+
+          const icon = document.createElement("span");
+          icon.className = "game-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = game.icon;
+
+          const copy = document.createElement("div");
+          const title = document.createElement("h2");
+          title.textContent = game.title;
+          const description = document.createElement("p");
+          description.className = "description";
+          description.textContent = game.description;
+          copy.append(title, description);
+          link.append(icon, copy);
+          fragment.append(link);
+        });
+        library.replaceChildren(fragment);
+        message.textContent = "";
+      }
+
+      function loadGames() {
+        refreshButton.disabled = true;
+        message.textContent = "";
+        catalogRevision = Date.now().toString();
+        const script = document.createElement("script");
+        script.src = `games.js?v=${encodeURIComponent(catalogRevision)}`;
+        script.onload = () => {
+          refreshButton.disabled = false;
+          try {
+            renderGames(validateCatalog(window.ARCADE_GAMES));
+          } catch (error) {
+            showError(error);
+          }
+          delete window.ARCADE_GAMES;
+          script.remove();
+        };
+        script.onerror = () => {
+          refreshButton.disabled = false;
+          script.remove();
+          showError(new Error("games.js could not be loaded."));
+        };
+        document.head.append(script);
+      }
+
+      refreshButton.addEventListener("click", loadGames);
+      loadGames();
+    })();
+  </script>
 </body>
 </html>

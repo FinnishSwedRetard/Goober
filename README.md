@@ -1,6 +1,6 @@
 # Browser Arcade
 
-A small collection of no-install games, with a retro-style game picker. Open `index.html` to browse the games, then click **Play now**. The games need no Python, add-ons, or internet connection.
+A small collection of no-install games, with a retro-style game picker and the owner's original character as its mascot. Open `index.html` to browse the games, then click **Play now**. The games need no Python, add-ons, or internet connection.
 
 ## Games
 
@@ -11,7 +11,7 @@ A small collection of no-install games, with a retro-style game picker. Open `in
 
 ## Play and share
 
-Download the whole repository with **Code → Download ZIP** and extract it to a folder, or copy the files together onto a USB stick. Open `index.html` to browse the game collection, or open a game's HTML file directly. Parking Lot Drift uses the bundled car sprites in `assets/cars`, so keep that folder alongside `drift.html`. Share the folder or ZIP with friends to play offline.
+Download the whole repository with **Code → Download ZIP** and extract it to a folder, or copy the files together onto a USB stick. Open `index.html` to browse the game collection, or open a game's HTML file directly. Keep the `assets` folder alongside the HTML files for the arcade mascot and Parking Lot Drift's car sprites. Share the folder or ZIP with friends to play offline.
 
 The car sprites are from [Desktop-Drift](https://github.com/FinnishSwedRetard/Desktop-Drift/tree/main/Car%20Game/Assets/Car) and are bundled locally so Drift works offline.
 

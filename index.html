@@ -43,6 +43,31 @@
       letter-spacing: -.08em;
       text-shadow: 4px 4px 0 #8d4fbc, 7px 7px 0 #381d55;
     }
+    .mascot {
+      display: flex;
+      width: max-content;
+      align-items: center;
+      gap: 11px;
+      margin: 18px auto 0;
+      padding: 6px 15px 6px 6px;
+      border: 1px solid #66537f;
+      border-radius: 999px;
+      background: #211b35c9;
+      color: #ffdc70;
+      font-size: .67rem;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-align: left;
+    }
+    .mascot img {
+      display: block;
+      width: 76px;
+      height: 76px;
+      border: 2px solid #ffdc70;
+      border-radius: 50%;
+      background: white;
+      object-fit: cover;
+    }
     .intro { max-width: 510px; margin: 15px auto 0; color: #d0c3e7; font-size: .92rem; line-height: 1.6; }
     .status {
       display: inline-flex;
@@ -159,8 +184,12 @@
     <header>
       <p class="coin">★ Insert imagination ★</p>
       <h1>PIXEL POCKET<br>ARCADE</h1>
-      <p class="intro">Three tiny games. Zero downloads. Pick a cabinet, press play, and set a new high score.</p>
+      <p class="intro">Four tiny games. Zero downloads. Pick a cabinet, press play, and set a new high score.</p>
       <span class="status">OFFLINE &amp; READY TO PLAY</span>
+      <figure class="mascot">
+        <img src="assets/mascot/oc.png" alt="The arcade owner's hand-drawn bird character wearing a little cap">
+        <figcaption>ARCADE MASCOT<br><span style="color:#c6bad8;font-weight:400;letter-spacing:.04em">PLAYER 1'S ORIGINAL CHARACTER</span></figcaption>
+      </figure>
     </header>
 
     <div class="divider">Choose your game</div>

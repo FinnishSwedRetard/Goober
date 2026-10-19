@@ -1,13 +1,15 @@
-# Comet Courier
+# Browser Arcade
 
-A tiny, no-install space arcade game. The entire game is in `index.html`: no Python, add-ons, downloads, or internet connection are needed to play.
+A small collection of no-install games. Each game is a single HTML file with all its code and graphics included. No Python, add-ons, internet connection, or setup are needed; open a game in a browser.
 
-## Play
+## Games
 
-1. Download `index.html` from this repository, or use **Code → Download ZIP** and extract the ZIP.
-2. Open `index.html` in a web browser. On Windows, right-click the file and choose **Open with** if it does not open in a browser automatically.
-3. Click **Launch mission**. Steer with the left/right arrow keys or **A**/**D**. On a touchscreen, drag across the game.
+- **Comet Courier** (`index.html`): Dodge space rocks, collect stardust, and try to beat your best score. Steer with the left/right arrow keys or **A**/**D**; drag on a touchscreen.
+- **Mini Tetris** (`tetris.html`): Stack falling blocks and clear lines. Move with **←/→**, rotate with **↑**, soft drop with **↓**, hard drop with **Space**, and pause with **P**. Touch controls are included.
+- **Snack Snake** (`snake.html`): Eat snacks, grow longer, and avoid the walls and your tail. Steer with the arrow keys or **W/A/S/D**; press **Space** to pause. Touch controls are included.
 
-Dodge rocks, collect glowing stardust, and try to beat your best score. Press **Space** to start or fly again.
+## Play and share
 
-You can copy `index.html` to a USB stick and open it from there. Windows does not automatically launch programs from USB drives, so open the file manually; the game itself runs offline in your browser. Share the file or ZIP with friends so they can play too. If a school device blocks locally opened HTML files, follow the school's approved software rules rather than trying to bypass its protections.
+Download the individual `.html` file you want, or use **Code → Download ZIP** and extract the games. Double-click a game file to open it in a browser; on Windows, right-click and choose **Open with** if needed. Copy the HTML files to a USB stick or share them with friends to play offline.
+
+Windows does not automatically launch files from USB drives, so open the game file manually. If a managed device blocks local HTML files, use a school-approved way to play rather than bypassing its protections.

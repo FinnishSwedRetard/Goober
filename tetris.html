@@ -24,6 +24,9 @@
     main { width: min(100%, 460px); text-align: center; }
     .eyebrow { margin: 0; color: #91e9dc; font-size: .75rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
     h1 { margin: 3px 0; font-size: clamp(2rem, 8vw, 2.7rem); letter-spacing: -.05em; }
+    .arcade-link { display: inline-block; margin-bottom: 10px; color: #91e9dc; font-weight: 800; text-decoration: none; }
+    .arcade-link:hover { color: #b9fff3; text-decoration: underline; }
+    .arcade-link:focus-visible { outline: 3px solid white; outline-offset: 4px; }
     .subtitle { margin: 0 0 14px; color: #c1c4df; font-size: .9rem; }
     .panel { padding: 12px; border: 1px solid #4e5685; border-radius: 18px; background: #191d3b; box-shadow: 0 20px 60px #08091c99; }
     .game { display: flex; justify-content: center; align-items: flex-start; gap: 12px; }
@@ -59,6 +62,7 @@
 </head>
 <body>
   <main>
+    <a class="arcade-link" href="index.html">← Back to the arcade</a>
     <p class="eyebrow">One more line!</p>
     <h1>Mini Tetris</h1>
     <p class="subtitle">A quick classic. Clear lines, climb levels, chase your high score.</p>

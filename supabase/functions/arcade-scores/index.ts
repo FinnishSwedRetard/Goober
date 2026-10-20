@@ -295,11 +295,8 @@ function verifyFlappyRat(seed: number, ticks: number, events: Array<{ tick: numb
   let obstacles: Array<{
     x: number;
     gapCenter: number;
-    special: boolean;
     passed: boolean;
-    dropSpawned: boolean;
   }> = [];
-  let droplets: Array<{ x: number; y: number }> = [];
   let powerups: Array<{ x: number; y: number; collected: boolean }> = [];
   let nextObstacleTick = 38;
   let eventIndex = 0;
@@ -308,9 +305,7 @@ function verifyFlappyRat(seed: number, ticks: number, events: Array<{ tick: numb
     const obstacle = {
       x: width + 30,
       gapCenter: 270 + random() * 260,
-      special: random() < .36,
-      passed: false,
-      dropSpawned: false
+      passed: false
     };
     obstacles.push(obstacle);
     if (random() < .62) {
@@ -356,11 +351,6 @@ function verifyFlappyRat(seed: number, ticks: number, events: Array<{ tick: numb
       obstacle.x -= speed;
       const gapTop = obstacle.gapCenter - gapHeight / 2;
       const gapBottom = obstacle.gapCenter + gapHeight / 2;
-      if (obstacle.special && !obstacle.dropSpawned
-        && obstacle.x + pipeWidth / 2 <= playerX) {
-        obstacle.dropSpawned = true;
-        droplets.push({ x: obstacle.x + pipeWidth / 2, y: gapTop + 18 });
-      }
       if (playerX + playerRadius > obstacle.x && playerX - playerRadius < obstacle.x + pipeWidth
         && (ratY - playerRadius < gapTop || ratY + playerRadius > gapBottom)) return null;
       if (!obstacle.passed && obstacle.x + pipeWidth < playerX) {
@@ -369,13 +359,6 @@ function verifyFlappyRat(seed: number, ticks: number, events: Array<{ tick: numb
       }
     }
     obstacles = obstacles.filter(obstacle => obstacle.x + pipeWidth > -10);
-
-    for (const drop of droplets) {
-      drop.y += 7.4;
-      if (Math.abs(playerX - drop.x) < playerRadius + 11
-        && Math.abs(ratY - drop.y) < playerRadius + 13) return null;
-    }
-    droplets = droplets.filter(drop => drop.y < height + 30);
 
     for (const powerup of powerups) {
       powerup.x -= speed;

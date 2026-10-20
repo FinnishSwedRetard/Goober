@@ -15,7 +15,7 @@ Then open <http://localhost:8765/>. The site follows the browser's light or dark
 ## Project layout
 
 - `index.html` contains the game picker and its carousel behavior.
-- `games/flappy-rat.html` is a 100-second sewer escape game with automatic wing animation, vertical flight, speed controls, falling hazards, collectable boosts, and a replay-verified global leaderboard.
+- `games/flappy-rat.html` is a 100-second sewer escape game with automatic wing animation, vertical flight, speed controls, collectable boosts, and a replay-verified global leaderboard.
 - `games/snack-snake.html` is the playable Snack Snake game. Move with WASD or the arrow keys; press Space or P to pause. Global leaderboard scores are replay-verified before they are saved.
 - `games/tetris.html` is Mini Tetris in the Base Format layout. Move with the left/right/down arrows, rotate with Up, hard drop with Space, and pause with P or Escape. Global scores are replay-verified before they are saved.
 - `assets/placeholder.png` is the temporary game-card image, marked with a diagonal red placeholder watermark.

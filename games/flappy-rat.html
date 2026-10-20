@@ -178,7 +178,7 @@
           <div class="game-overlay" id="game-overlay">
             <div class="start-card">
               <h2 id="overlay-title">Ready to escape?</h2>
-              <p id="overlay-message">Fly your mutant-winged rat through the sewer. Dodge pipes and falling dookies, grab boosts, and escape before the tide rises.</p>
+              <p id="overlay-message">Fly your mutant-winged rat through the sewer. Dodge pipes, grab boosts, and escape before the tide rises.</p>
               <button class="start-button" id="start-button" type="button">Start escape</button>
             </div>
           </div>
@@ -213,7 +213,7 @@
           <section class="detail-panel" aria-label="Game description">
             <button class="detail-tab" id="description-toggle" type="button" aria-controls="description-content" aria-expanded="false" hidden>Read description</button>
             <div class="detail-content description-content" id="description-content" tabindex="0">
-              <p>A tiny sewer rat with mutant wings has 100 seconds to escape the rising poop tide. The wings flap on their own, so focus on weaving around sewer pipes, slowing down under dookie-dropping pipes, and collecting charges for a powerful boost. Stay airborne, keep moving, and make it to the exit!</p>
+              <p>A tiny sewer rat with mutant wings has 100 seconds to escape the rising poop tide. The wings flap on their own, so focus on weaving around sewer pipes and collecting charges for a powerful boost. Stay airborne, keep moving, and make it to the exit!</p>
             </div>
           </section>
           <section class="detail-panel" aria-label="Global high scores">
@@ -281,7 +281,6 @@
       let boostTicks = 0;
       let pendingBoosts = 0;
       let obstacles = [];
-      let droplets = [];
       let powerups = [];
       let nextObstacleTick = 38;
       let animationFrame = 0;
@@ -382,7 +381,6 @@
         boostTicks = 0;
         pendingBoosts = 0;
         obstacles = [];
-        droplets = [];
         powerups = [];
         nextObstacleTick = 38;
         runEvents = [];
@@ -427,14 +425,11 @@
 
       function spawnObstacle() {
         const gapCenter = 270 + random() * 260;
-        const special = random() < .36;
         const hasPowerup = random() < .62;
         const obstacle = {
           x: width + 30,
           gapCenter,
-          special,
-          passed: false,
-          dropSpawned: false
+          passed: false
         };
         obstacles.push(obstacle);
         if (hasPowerup) {
@@ -496,11 +491,6 @@
           obstacle.x -= speed;
           const gapTop = obstacle.gapCenter - gapHeight / 2;
           const gapBottom = obstacle.gapCenter + gapHeight / 2;
-          if (obstacle.special && !obstacle.dropSpawned
-            && obstacle.x + pipeWidth / 2 <= playerX) {
-            obstacle.dropSpawned = true;
-            droplets.push({ x: obstacle.x + pipeWidth / 2, y: gapTop + 18 });
-          }
           if (playerX + playerRadius > obstacle.x && playerX - playerRadius < obstacle.x + pipeWidth
             && (ratY - playerRadius < gapTop || ratY + playerRadius > gapBottom)) {
             finish(false);
@@ -511,12 +501,6 @@
           }
         });
         obstacles = obstacles.filter(obstacle => obstacle.x + pipeWidth > -10);
-
-        droplets.forEach(drop => {
-          drop.y += 7.4;
-          if (intersects(playerX, ratY, drop.x, drop.y, playerRadius + 11, playerRadius + 13)) finish(false);
-        });
-        droplets = droplets.filter(drop => drop.y < height + 30);
 
         powerups.forEach(powerup => {
           powerup.x -= speed;
@@ -628,20 +612,6 @@
         ctx.restore();
       }
 
-      function drawDroppings(drop) {
-        ctx.fillStyle = "#8b512d";
-        ctx.beginPath();
-        ctx.arc(drop.x, drop.y + 8, 12, 0, Math.PI * 2);
-        ctx.arc(drop.x - 7, drop.y, 7, 0, Math.PI * 2);
-        ctx.arc(drop.x + 5, drop.y - 3, 8, 0, Math.PI * 2);
-        ctx.arc(drop.x + 2, drop.y - 12, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#c38754";
-        ctx.beginPath();
-        ctx.arc(drop.x - 5, drop.y + 5, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
       function draw() {
         const sky = ctx.createLinearGradient(0, 0, 0, height);
         sky.addColorStop(0, "#201a35");
@@ -685,12 +655,6 @@
           const gapBottom = obstacle.gapCenter + gapHeight / 2;
           drawPipe(obstacle.x, 0, pipeWidth, gapTop, false);
           drawPipe(obstacle.x, gapBottom, pipeWidth, height - gapBottom, true);
-          if (obstacle.special) {
-            ctx.fillStyle = "#bf6138";
-            ctx.fillRect(obstacle.x + 20, gapTop - 9, 56, 12);
-            ctx.fillStyle = "#e8a25a";
-            ctx.fillRect(obstacle.x + 28, gapTop - 7, 40, 4);
-          }
         });
         powerups.forEach(powerup => {
           ctx.save();
@@ -708,7 +672,6 @@
           ctx.fillText("⚡", powerup.x, powerup.y + 1);
           ctx.restore();
         });
-        droplets.forEach(drawDroppings);
         drawRat();
         ctx.fillStyle = "#ffffffa6";
         ctx.font = "bold 18px Trebuchet MS, Arial";

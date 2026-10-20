@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Pixel Pocket Arcade</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #fff;
+      color: #161616;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: #fff;
+      color: #161616;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .shell { width: min(100% - 32px, 820px); margin: 0 auto; padding: 34px 0; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 26px;
+    }
+    h1 { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: -.06em; }
+    .mascot { width: 58px; height: 58px; border: 1px solid #dedede; border-radius: 50%; background: #fff; object-fit: cover; }
+    .refresh {
+      position: fixed;
+      top: 13px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border: 1px solid #d5d5d5;
+      border-radius: 50%;
+      background: #fff;
+      color: #161616;
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .refresh:hover { background: #f0f0f0; }
+    .refresh:focus-visible, .game-card:focus-visible { outline: 3px solid #6176e9; outline-offset: 3px; }
+    .refresh:disabled { cursor: wait; opacity: .55; }
+    .library { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .game-card {
+      --accent: #4b60bb;
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      align-items: center;
+      gap: 15px;
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid #dedede;
+      border-radius: 10px;
+      background: #fff;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .game-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .game-icon {
+      display: grid;
+      width: 72px;
+      height: 72px;
+      place-items: center;
+      border-radius: 9px;
+      background: #f3f3f3;
+      font-size: 2.5rem;
+    }
+    .game-card h2 { margin: 0; color: var(--accent); font-size: 1.08rem; }
+    .description { margin: 6px 0 0; color: #555; font-size: .87rem; line-height: 1.45; }
+    .message { margin: 18px 0 0; color: #555; font-size: .9rem; text-align: center; }
+    .message:empty { display: none; }
+    @media (prefers-color-scheme: dark) {
+      :root { background: #111; color: #f3f3f3; }
+      body { background: #111; color: #f3f3f3; }
+      .mascot { border-color: #444; }
+      .refresh { border-color: #454545; background: #1c1c1c; color: #f3f3f3; }
+      .refresh:hover { background: #292929; }
+      .game-card { border-color: #414141; background: #191919; }
+      .game-icon { background: #252525; }
+      .description, .message { color: #c2c2c2; }
+    }
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 24px, 440px); padding-top: 62px; }
+      .library { grid-template-columns: 1fr; gap: 9px; }
+      header { margin-bottom: 20px; }
+    }
+    @media (max-width: 350px) {
+      .game-card { grid-template-columns: 58px minmax(0, 1fr); gap: 11px; padding: 12px; }
+      .game-icon { width: 56px; height: 56px; font-size: 2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <img class="mascot" src="assets/mascot/oc.png" alt="">
+      <h1>Pixel Pocket Arcade</h1>
+    </header>
+    <button class="refresh" id="refresh" type="button" aria-label="Check for new games" title="Check for new games">↻</button>
+    <nav class="library" id="games" aria-label="Games"></nav>
+    <p class="message" id="message" role="status" aria-live="polite"></p>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+      const library = document.querySelector("#games");
+      const message = document.querySelector("#message");
+      const refreshButton = document.querySelector("#refresh");
+      const colors = ["#485fba", "#a44c42", "#277a51", "#995c16", "#7650a4", "#197c86"];
+      let catalogRevision = Date.now().toString();
+
+      function showError(error) {
+        console.error("Could not load the arcade game list:", error);
+        message.textContent = "Could not load games. Check your connection and try again.";
+      }
+
+      function validateCatalog(catalog) {
+        if (!Array.isArray(catalog)) throw new Error("The game list must be an array.");
+        const ids = new Set();
+        return catalog.map((game, index) => {
+          if (!game || typeof game !== "object") throw new Error(`Game ${index + 1} must be an object.`);
+          const { id, title, description, href, icon } = game;
+          if (typeof id !== "string" || !/^[a-z0-9-]+$/.test(id) || ids.has(id)) {
+            throw new Error(`Game ${index + 1} has an invalid or duplicate ID.`);
+          }
+          if (typeof title !== "string" || !title.trim()) throw new Error(`Game "${id}" needs a title.`);
+          if (typeof description !== "string" || !description.trim()) throw new Error(`Game "${id}" needs a description.`);
+          if (typeof href !== "string" || !/^[a-zA-Z0-9_./-]+\.html$/.test(href) || href.includes("..")) {
+            throw new Error(`Game "${id}" needs a relative HTML file path.`);
+          }
+          if (typeof icon !== "string" || !icon.trim() || icon.length > 12) throw new Error(`Game "${id}" needs a short icon.`);
+          const url = new URL(href, new URL("./", location.href));
+          if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", location.href).pathname)) {
+            throw new Error(`Game "${id}" must link to a local HTML file.`);
+          }
+          ids.add(id);
+          return { id, title: title.trim(), description: description.trim(), href, icon: icon.trim() };
+        });
+      }
+
+      function renderGames(games) {
+        const fragment = document.createDocumentFragment();
+        games.forEach((game, index) => {
+          const link = document.createElement("a");
+          link.className = "game-card";
+          link.href = game.href;
+          link.search = `?v=${encodeURIComponent(catalogRevision)}`;
+          link.style.setProperty("--accent", colors[index % colors.length]);
+
+          const icon = document.createElement("span");
+          icon.className = "game-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = game.icon;
+
+          const copy = document.createElement("div");
+          const title = document.createElement("h2");
+          title.textContent = game.title;
+          const description = document.createElement("p");
+          description.className = "description";
+          description.textContent = game.description;
+          copy.append(title, description);
+          link.append(icon, copy);
+          fragment.append(link);
+        });
+        library.replaceChildren(fragment);
+        message.textContent = "";
+      }
+
+      function loadGames() {
+        refreshButton.disabled = true;
+        message.textContent = "";
+        catalogRevision = Date.now().toString();
+        const script = document.createElement("script");
+        script.src = `games.js?v=${encodeURIComponent(catalogRevision)}`;
+        script.onload = () => {
+          refreshButton.disabled = false;
+          try {
+            renderGames(validateCatalog(window.ARCADE_GAMES));
+          } catch (error) {
+            showError(error);
+          }
+          delete window.ARCADE_GAMES;
+          script.remove();
+        };
+        script.onerror = () => {
+          refreshButton.disabled = false;
+          script.remove();
+          showError(new Error("games.js could not be loaded."));
+        };
+        document.head.append(script);
+      }
+
+      refreshButton.addEventListener("click", loadGames);
+      loadGames();
+    })();
+  </script>
+</body>
+</html>

@@ -1,40 +1,34 @@
-# Browser Arcade
+# Goober Arcade
 
-A small collection of no-install games, with a simple game picker and the owner's original character as its mascot. The online picker checks the latest game list whenever you open it; use the refresh button to check again. It follows your device's light/dark theme. The games themselves need no Python or add-ons.
+Goober Arcade is a lightweight, static game-picker site published with GitHub Pages. The picker is being rebuilt; for now, it shows looping placeholder cards with the supplied cat image. Snack Snake and Mini Tetris are clickable from the picker.
 
-## Games
+## Preview locally
 
-- **Comet Courier** (`comet-courier.html`): Dodge space rocks, collect stardust, and try to beat your best score. Steer with the left/right arrow keys or **A**/**D**; drag on a touchscreen.
-- **Mini Tetris** (`tetris.html`): Stack falling blocks and clear lines. Move with **←/→**, rotate with **↑**, soft drop with **↓**, hard drop with **Space**, and pause with **P**. Touch controls are included.
-- **Snack Snake** (`snake.html`): Eat snacks, grow longer, and avoid the walls and your tail. Steer with the arrow keys or **W/A/S/D**; press **Space** to pause. Touch controls are included.
-- **Parking Lot Drift** (`drift.html`): Slide a little red car around the parking lot and build a drift combo in a 90-second run. Use **W/A/S/D** or the arrow keys; **Space** is the handbrake and **P** pauses. Touch controls are included.
+Run a static web server from the repository root, for example:
 
-## Online arcade
-
-GitHub Pages publishes the site after changes are pushed to `main`. To enable it, open the repository's **Settings → Pages** and set the build and deployment source to **GitHub Actions**. The site will then be available at `https://finnishswedretard.github.io/Goober/`. Open that link with an internet connection to get the current game list and game files. A new push appears once the Pages deployment finishes; reload the site to get the update. The refresh button checks the latest deployed game list again.
-
-## Add your own HTML game
-
-1. Add the game's `.html` file to the repository. Keep any images or other assets it uses in the repository too, and use relative paths.
-2. Add a comma after the last entry in `games.js`, then add a new object inside `window.ARCADE_GAMES` before the closing `]`. Give it a unique lowercase `id` using letters, numbers, and hyphens, plus a `title`, `description`, relative `.html` `href`, and a short emoji `icon`.
-3. Push or merge the changes to `main`. Once Pages finishes deploying, the game appears in the picker automatically.
-
-For example:
-
-```js
-{
-  id: "my-new-game",
-  title: "My New Game",
-  description: "A short description of the game.",
-  href: "my-new-game.html",
-  icon: "🎮"
-},
+```powershell
+python -m http.server 8765
 ```
 
-## Offline and USB
+Then open <http://localhost:8765/>. The site follows the browser's light or dark color-scheme preference. Scroll horizontally, use the mouse wheel, drag the cards, or press the left and right arrow keys to move through the centered carousel.
 
-Download the repository with **Code → Download ZIP** and extract it, or copy the files together onto a USB stick. Open a game's HTML file directly to play offline. Keep `games.js` and the `assets` folder alongside the HTML files if using the picker locally. The online picker needs an internet connection to refresh its game list; a USB copy cannot silently update or replace its own files. Windows does not automatically launch files from USB drives.
+## Project layout
 
-The car sprites are from [Desktop-Drift](https://github.com/FinnishSwedRetard/Desktop-Drift/tree/main/Car%20Game/Assets/Car) and are bundled locally so Drift works offline.
+- `index.html` contains the game picker and its carousel behavior.
+- `games/snack-snake.html` is the playable Snack Snake game. Move with WASD or the arrow keys; press Space or P to pause. Global leaderboard scores are replay-verified before they are saved.
+- `games/tetris.html` is Mini Tetris in the Base Format layout. Move with the left/right/down arrows, rotate with Up, hard drop with Space, and pause with P or Escape. Global scores are replay-verified before they are saved.
+- `assets/placeholder.png` is the temporary game-card image, marked with a diagonal red placeholder watermark.
+- `archive/` preserves the previous site and games while the redesign is in progress. The old games are not linked from the current picker.
+- `devtools/base-format.html` is the reusable responsive 1150 × 800 game-page template, aligned 15px from the top-left with its title and scrollable description alongside it. It includes the shared global top-five leaderboard component. Copy it when creating a game and set the game's leaderboard ID; add a server replay verifier before enabling submissions for a new game.
+- `assets/leaderboard.js` loads the public top-five lists, prompts for a five-letter name when a finished score qualifies, and submits replay data for server-side validation.
+- `supabase/migrations/` contains the leaderboard schema and write restrictions. `supabase/functions/arcade-scores/` starts seeded game sessions and independently replays Snake and Tetris inputs before accepting scores. Direct client score inserts are disabled.
+- `.github/workflows/pages.yml` publishes the repository with GitHub Pages when changes are pushed to `main`.
 
-If a managed device blocks local HTML files, use a school-approved way to play rather than bypassing its protections.
+When adding a game image or sprite, load it with the picker's `loadGameImage()` helper. If that asset is missing, corrupted, or fails to load from the repository, the helper uses `assets/placeholder.png` instead.
+
+Snack Snake currently draws its snake and snacks directly, so it does not require sprite files. Optional custom art can be added later as transparent 32 × 32 PNGs: a snake head facing right, a straight body segment, a corner body segment, a tail pointing left, and a snack. The game can be updated to rotate these pieces to match movement.
+
+## Links
+
+- [Goober on GitHub](https://github.com/FinnishSwedRetard)
+- [Goober Arcade repository](https://github.com/FinnishSwedRetard/Goober)

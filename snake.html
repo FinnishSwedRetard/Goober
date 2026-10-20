@@ -56,6 +56,27 @@
     .touch button[data-dir="left"] { grid-column: 1; grid-row: 2; }
     .touch button[data-dir="down"] { grid-column: 2; grid-row: 2; }
     .touch button[data-dir="right"] { grid-column: 3; grid-row: 2; }
+    .leaderboard {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid #3e6a64;
+      border-radius: 14px;
+      background: rgba(22, 43, 48, 0.95);
+      text-align: left;
+    }
+    .leaderboard h3 {
+      margin: 0 0 8px;
+      color: #92f0b0;
+      font-size: .95rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .leaderboard ol {
+      margin: 0;
+      padding-left: 20px;
+      color: #f2fff8;
+      line-height: 1.9;
+    }
   </style>
 </head>
 <body>
@@ -88,9 +109,20 @@
         <button type="button" data-dir="right" aria-label="Go right">→</button>
       </div>
     </section>
+    <div class="leaderboard">
+      <h3>Global leaderboard</h3>
+      <ol id="snake-leaderboard"></ol>
+    </div>
     <p class="help">Steer with <b>← → ↑ ↓</b> or <b>W A S D</b> · <b>Space</b> pauses · Also works with touch buttons</p>
   </main>
-  <script>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const GAME_ID = "snake";
+    const SUPABASE_URL = "https://yticogmmbpbqljfbtjag.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_YK--EsauidA8dnCoSLdJCQ_NAXytnyn";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     (() => {
       "use strict";
       const canvas = document.querySelector("#board");
@@ -116,6 +148,71 @@
       let lastFrame = 0;
       try { best = Number(localStorage.getItem("snack-snake-best")) || 0; } catch { best = 0; }
       bestLabel.textContent = best;
+
+      async function loadGlobalLeaderboard() {
+        const list = document.getElementById("snake-leaderboard");
+        if (!list) return;
+
+        list.innerHTML = "";
+
+        const { data, error } = await supabase
+          .from("game_scores")
+          .select("player_name, score")
+          .eq("game_id", GAME_ID)
+          .order("score", { ascending: false })
+          .limit(10);
+
+        if (error) {
+          const item = document.createElement("li");
+          item.textContent = "Could not load leaderboard.";
+          list.appendChild(item);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          const item = document.createElement("li");
+          item.textContent = "No scores yet.";
+          list.appendChild(item);
+          return;
+        }
+
+        data.forEach((entry, index) => {
+          const item = document.createElement("li");
+          item.textContent = `${index + 1}. ${entry.player_name} — ${entry.score}`;
+          list.appendChild(item);
+        });
+      }
+
+      async function submitGlobalScore(scoreValue) {
+        const name = prompt("New global high score! Enter your 3–5 letter name:", "");
+        if (!name) return;
+
+        const cleanName = name.trim().toUpperCase();
+        if (!/^[A-Z]{3,5}$/.test(cleanName)) {
+          alert("Use 3–5 letters only.");
+          return;
+        }
+
+        const { error } = await supabase
+          .from("game_scores")
+          .insert({
+            game_id: GAME_ID,
+            player_name: cleanName,
+            score: scoreValue
+          });
+
+        if (error) {
+          alert("Could not save score: " + error.message);
+          return;
+        }
+
+        loadGlobalLeaderboard();
+      }
+
+      function maybeSaveGlobalScore() {
+        if (score <= 0) return;
+        submitGlobalScore(score);
+      }
 
       function spawnSnack() {
         const empty = [];
@@ -156,6 +253,7 @@
         messageText.textContent = `${won ? "You ate every snack!" : "The run is over."} Score: ${score}.${record ? " New personal best!" : " Ready for a rematch?"}`;
         startButton.textContent = "Play again";
         overlay.hidden = false;
+        maybeSaveGlobalScore();
       }
       function tick() {
         direction = queuedDirection;
@@ -265,6 +363,7 @@
           setDirection(x, y);
         });
       });
+      loadGlobalLeaderboard();
       lastFrame = performance.now();
       requestAnimationFrame(frame);
     })();

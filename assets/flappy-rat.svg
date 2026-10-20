@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <defs>
+    <linearGradient id="sewer" x2="0" y2="1">
+      <stop stop-color="#261d3c"/>
+      <stop offset="1" stop-color="#523d43"/>
+    </linearGradient>
+    <linearGradient id="pipe" x2="1">
+      <stop stop-color="#496450"/>
+      <stop offset=".22" stop-color="#9bae7c"/>
+      <stop offset=".55" stop-color="#638264"/>
+      <stop offset="1" stop-color="#2d493f"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#sewer)"/>
+  <g fill="none" stroke="#d8c8ee" stroke-opacity=".12" stroke-width="5">
+    <path d="M15 65h270v95H15zM300 65h325M15 180h270v95H15zM300 180h325M15 295h270v95H15zM300 295h325M15 410h270v95H15zM300 410h325"/>
+  </g>
+  <path fill="#774c36" d="M0 515q80-24 160 0t160 0 160 0 160 0v125H0z"/>
+  <path fill="#b7784e" d="M0 516q80-24 160 0t160 0 160 0 160 0" fill-opacity=".8"/>
+  <g>
+    <path fill="url(#pipe)" d="M35 0h95v245H35zM35 378h95v262H35z"/>
+    <path fill="#adad81" d="M22 218h121v35H22zM22 371h121v35H22z"/>
+    <path fill="url(#pipe)" d="M505 0h95v168h-95zM505 398h95v242h-95z"/>
+    <path fill="#adad81" d="M492 142h121v35H492zM492 391h121v35H492z"/>
+    <g fill="#e1d29a"><circle cx="39" cy="235" r="4"/><circle cx="126" cy="235" r="4"/><circle cx="39" cy="388" r="4"/><circle cx="126" cy="388" r="4"/><circle cx="509" cy="159" r="4"/><circle cx="596" cy="159" r="4"/></g>
+  </g>
+  <g fill="#ffe16f" stroke="#fff4b3" stroke-width="5">
+    <circle cx="376" cy="314" r="25"/>
+    <path d="m377 274-22 44h19l-9 37 34-49h-21l11-32z" stroke="none" fill="#624789"/>
+  </g>
+  <g fill="#9b74d8" stroke="#d6b9ff" stroke-width="5">
+    <path d="M289 290q-63-80-58-8 4 42 64 39M305 342q-65 74-67 6 0-37 66-38"/>
+  </g>
+  <path fill="#9297a5" d="M270 325c-38 8-46 52-78 31-27-18-10-45 17-35"/>
+  <ellipse cx="336" cy="321" fill="#a2a6b4" rx="74" ry="53"/>
+  <ellipse cx="386" cy="331" fill="#c3c5cf" rx="43" ry="32"/>
+  <circle cx="294" cy="285" r="27" fill="#c88ca5"/>
+  <circle cx="346" cy="277" r="24" fill="#c88ca5"/>
+  <circle cx="294" cy="285" r="13" fill="#f0bcc8"/>
+  <circle cx="346" cy="277" r="12" fill="#f0bcc8"/>
+  <circle cx="401" cy="317" r="8" fill="#241d32"/>
+  <ellipse cx="426" cy="334" rx="9" ry="7" fill="#ef8ca2"/>
+  <g fill="#8b512d">
+    <circle cx="453" cy="269" r="21"/><circle cx="440" cy="255" r="13"/><circle cx="458" cy="246" r="12"/><circle cx="474" cy="261" r="11"/>
+  </g>
+  <text x="320" y="592" fill="#ffe18a" font-family="Trebuchet MS,Arial,sans-serif" font-size="44" font-weight="900" letter-spacing="2" text-anchor="middle">FLAPPY RAT</text>
+</svg>

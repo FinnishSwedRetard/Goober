@@ -28,5 +28,12 @@ window.ARCADE_GAMES = [
     description: "Slide a little red car around the lot, leave skid marks, and build drift combos.",
     href: "drift.html",
     icon: "🏎️"
+  },
+  {
+    id: "paint-party",
+    title: "Paint Party",
+    description: "Paint a shared 500x500 board and see what everyone else adds in real time.",
+    href: "paint-party.html",
+    icon: "🎨"
   }
 ];

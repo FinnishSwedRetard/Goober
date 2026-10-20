@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paint Party</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+    }
+    .wrap {
+      width: min(90vw, 620px);
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      width: 500px;
+      height: 500px;
+      max-width: 100%;
+      background: white;
+      border: 2px solid #334155;
+      cursor: crosshair;
+      image-rendering: pixelated;
+    }
+    .toolbar {
+      margin-top: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    input[type="color"] {
+      width: 42px;
+      height: 42px;
+      border: none;
+      background: transparent;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #22c55e;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .status {
+      margin-top: 10px;
+      color: #cbd5e1;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Paint Party</h1>
+    <canvas id="board" width="500" height="500"></canvas>
+
+    <div class="toolbar">
+      <input id="color" type="color" value="#ff0000" />
+      <button id="clearBtn" type="button">Clear board</button>
+    </div>
+
+    <div id="status" class="status">Loading board...</div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://yticogmmbpbqljfbtjag.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_YK--EsauidA8dnCoSLdJCQ_NAXytnyn";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const canvas = document.getElementById("board");
+    const ctx = canvas.getContext("2d");
+    const colorInput = document.getElementById("color");
+    const statusEl = document.getElementById("status");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const CELL = 25;
+    const GRID = 500 / CELL;
+    let lastPaint = 0;
+    const cooldownSeconds = 60;
+
+    function drawBoardBase() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          ctx.fillStyle = "#f8fafc";
+          ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+          ctx.strokeStyle = "#e2e8f0";
+          ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
+        }
+      }
+    }
+
+    function drawCell(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+    }
+
+    function getCellFromEvent(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor(((event.clientX - rect.left) / rect.width) * GRID);
+      const y = Math.floor(((event.clientY - rect.top) / rect.height) * GRID);
+
+      if (x < 0 || x >= GRID || y < 0 || y >= GRID) return null;
+      return { x, y };
+    }
+
+    async function loadBoard() {
+      const { data, error } = await supabase
+        .from("paint_cells")
+        .select("*");
+
+      if (error) {
+        statusEl.textContent = "Could not load board.";
+        console.error(error);
+        return;
+      }
+
+      drawBoardBase();
+
+      for (const cell of data) {
+        drawCell(cell.x, cell.y, cell.color);
+      }
+
+      statusEl.textContent = "Board ready";
+    }
+
+    async function paintCell(x, y) {
+      const now = Date.now();
+      const elapsed = Math.floor((now - lastPaint) / 1000);
+
+      if (lastPaint && elapsed < cooldownSeconds) {
+        statusEl.textContent = "Cooldown: " + (cooldownSeconds - elapsed) + "s";
+        return;
+      }
+
+      lastPaint = now;
+      const color = colorInput.value;
+
+      const { error } = await supabase
+        .from("paint_cells")
+        .upsert({ x, y, color }, { onConflict: "x,y" });
+
+      if (error) {
+        statusEl.textContent = "Paint failed";
+        console.error(error);
+      } else {
+        statusEl.textContent = "Paint sent";
+      }
+    }
+
+    canvas.addEventListener("click", async (event) => {
+      const cell = getCellFromEvent(event);
+      if (!cell) return;
+      await paintCell(cell.x, cell.y);
+    });
+
+    clearBtn.addEventListener("click", async () => {
+      const { error } = await supabase.from("paint_cells").delete().neq("x", -1);
+
+      if (error) {
+        statusEl.textContent = "Clear failed";
+        console.error(error);
+      } else {
+        drawBoardBase();
+        statusEl.textContent = "Board cleared";
+      }
+    });
+
+    supabase
+      .channel("paint-room")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "paint_cells" }, (payload) => {
+        drawCell(payload.new.x, payload.new.y, payload.new.color);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "paint_cells" }, (payload) => {
+        drawCell(payload.new.x, payload.new.y, payload.new.color);
+      })
+      .subscribe();
+
+    drawBoardBase();
+    loadBoard();
+  </script>
+</body>
+</html>

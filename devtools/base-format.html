@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Base Format | Goober Arcade</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+      color: #292442;
+      background: #fff;
+      --page-background: #fff;
+      --surface: #fff;
+      --border: #dcd8e8;
+      --muted: #777187;
+      --accent: #5339bd;
+      --stage-background: #f5f3fa;
+      --stage-grid: rgba(83, 57, 189, .07);
+      --description-background: #e1e1e1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--page-background);
+    }
+    .page {
+      min-height: 100vh;
+      padding: 15px 15px 76px;
+    }
+    .back-link {
+      position: fixed;
+      z-index: 2;
+      right: 15px;
+      bottom: 15px;
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      padding: 0 15px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 3px 10px rgba(35, 28, 61, .16);
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .back-link:hover { box-shadow: 0 5px 14px rgba(35, 28, 61, .22); }
+    .workspace {
+      display: grid;
+      width: 100%;
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 0;
+    }
+    .game-frame { width: 100%; max-width: 1150px; }
+    .title-panel {
+      width: min(100%, 440px);
+      justify-self: center;
+      padding: 0 12px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      letter-spacing: -.05em;
+      text-align: center;
+    }
+    .detail-panels {
+      display: grid;
+      height: min(68vh, 600px);
+      min-height: 260px;
+      grid-template-rows: minmax(0, 1fr) 30px;
+      gap: 5px;
+      transition: grid-template-rows .9s cubic-bezier(.22, .68, 0, 1);
+    }
+    .detail-panels[data-view="high-score"] { grid-template-rows: 30px minmax(0, 1fr); }
+    .detail-panel {
+      display: grid;
+      min-height: 0;
+      grid-template-rows: minmax(0, 1fr);
+      overflow: hidden;
+      border-radius: 14px;
+      background: var(--description-background);
+    }
+    .detail-tab {
+      width: 100%;
+      height: 30px;
+      overflow: hidden;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 700;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .detail-tab:hover { border-color: var(--accent); }
+    .detail-tab:focus-visible {
+      outline: 3px solid #ff907b;
+      outline-offset: 2px;
+    }
+    .detail-content {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 40px 34px;
+      color: var(--muted);
+      line-height: 1.6;
+      scrollbar-gutter: stable;
+    }
+    .detail-content[hidden], .detail-tab[hidden] { display: none; }
+    .detail-content:not([hidden]), .detail-tab:not([hidden]) {
+      animation: detail-panel-enter .9s ease-out both;
+    }
+    @keyframes detail-panel-enter {
+      from { opacity: .55; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .detail-content p { margin: 0; }
+    .description-content { font-size: 1.05rem; }
+    .high-score-content {
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+    .high-score-content h2 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.4rem;
+    }
+    .high-score-value {
+      color: var(--card-title, var(--accent));
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+    .high-score-note {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .high-score-status { margin: 0; color: var(--muted); font-size: .86rem; }
+    .high-score-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .high-score-list li {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .score-rank { color: var(--accent); font-weight: 800; }
+    .score-name { overflow: hidden; font-weight: 800; text-overflow: ellipsis; }
+    .score-value { color: var(--accent); }
+    .high-score-list .score-empty { opacity: .55; }
+    .game-frame { width: 100%; }
+    .game-stage {
+      position: relative;
+      display: grid;
+      width: 100%;
+      aspect-ratio: 1150 / 800;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background-color: var(--stage-background);
+      background-image:
+        linear-gradient(var(--stage-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+      background-position: center;
+      background-size: 32px 32px;
+    }
+    .coordinate {
+      position: absolute;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--muted);
+      font-family: Consolas, monospace;
+      font-size: clamp(.65rem, 1.4vw, .8rem);
+    }
+    .coordinate.start { top: 10px; left: 10px; }
+    .coordinate.end { right: 10px; bottom: 10px; }
+    .stage-label {
+      color: var(--muted);
+      font-size: clamp(.8rem, 2.3vw, 1.25rem);
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .stage-label span {
+      display: block;
+      margin-top: 8px;
+      font-family: Consolas, monospace;
+      font-size: .8em;
+      font-weight: 400;
+      letter-spacing: .04em;
+    }
+    .game-tools {
+      position: relative;
+      min-height: 52px;
+      margin-top: 10px;
+      padding-left: 10px;
+    }
+    .controls-toggle {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 3px 10px rgba(35, 28, 61, .2);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.35rem;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .controls-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(35, 28, 61, .24);
+    }
+    .controls-toggle:focus-visible, .back-link:focus-visible, .control-panel:focus-visible {
+      outline: 3px solid #ff907b;
+      outline-offset: 3px;
+    }
+    .control-panel {
+      position: absolute;
+      z-index: 1;
+      bottom: 100%;
+      left: 10px;
+      width: min(340px, calc(100vw - 52px));
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(35, 28, 61, .16);
+    }
+    .control-panel[hidden] { display: none; }
+    .control-panel h2 {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .control-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .control-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .key-group { display: inline-flex; min-width: 88px; gap: 4px; }
+    kbd {
+      display: inline-grid;
+      min-width: 28px;
+      height: 28px;
+      place-items: center;
+      padding: 0 6px;
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      background: var(--page-background);
+      color: var(--accent);
+      font: 700 .82rem Consolas, monospace;
+    }
+    .hint {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: .76rem;
+    }
+    @media (max-width: 850px) {
+      .workspace {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+      }
+      .title-panel {
+        grid-row: 2;
+        padding: 0;
+      }
+      .game-frame { grid-row: 1; }
+      .detail-panels {
+        height: min(42vh, 360px);
+        min-height: 180px;
+      }
+      .detail-content { padding: 24px 20px; }
+      h1 { font-size: clamp(2rem, 7vw, 3rem); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .detail-panels { transition: none; }
+      .detail-content:not([hidden]), .detail-tab:not([hidden]) { animation: none; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color: #f1eff8;
+        background: #1b1b20;
+        --page-background: #1b1b20;
+        --surface: #29282f;
+        --border: #4b4854;
+        --muted: #b7b2c2;
+        --accent: #c5b8ff;
+        --stage-background: #232229;
+        --stage-grid: rgba(197, 184, 255, .07);
+        --description-background: #36353b;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="workspace">
+      <section class="game-frame" aria-label="Base game layout">
+        <div class="game-stage" aria-label="Game area, 1150 by 800 pixels">
+          <span class="coordinate start">0, 0</span>
+          <div class="stage-label">Base game area<span>1150 × 800</span></div>
+          <span class="coordinate end">1150, 800</span>
+        </div>
+        <div class="game-tools">
+          <button
+            class="controls-toggle"
+            id="controls-toggle"
+            type="button"
+            aria-label="Show game controls"
+            aria-controls="control-panel"
+            aria-expanded="false"
+            title="Show game controls"
+          >🎮</button>
+          <section class="control-panel" id="control-panel" aria-labelledby="controls-title" hidden>
+            <h2 id="controls-title">Controls</h2>
+            <ul class="control-list">
+              <li><span class="key-group"><kbd>W</kbd><kbd>↑</kbd></span><span>Move up</span></li>
+              <li><span class="key-group"><kbd>A</kbd><kbd>←</kbd></span><span>Move left</span></li>
+              <li><span class="key-group"><kbd>S</kbd><kbd>↓</kbd></span><span>Move down</span></li>
+              <li><span class="key-group"><kbd>D</kbd><kbd>→</kbd></span><span>Move right</span></li>
+              <li><span class="key-group"><kbd>Space</kbd></span><span>Pause or confirm</span></li>
+            </ul>
+            <p class="hint">Use these rows as a starter control legend for future games.</p>
+          </section>
+        </div>
+      </section>
+      <header class="title-panel">
+        <h1>Base Format</h1>
+        <div class="detail-panels" id="detail-panels" data-view="description">
+          <section class="detail-panel" aria-label="Game description">
+            <button class="detail-tab" id="description-toggle" type="button" aria-controls="description-content" aria-expanded="false" hidden>Read description</button>
+            <div class="detail-content description-content" id="description-content" tabindex="0">
+              <p>A reusable game area sized 1150 × 800, scaled to fit your screen.</p>
+            </div>
+          </section>
+          <section class="detail-panel" aria-label="Global high score">
+            <button class="detail-tab" id="high-score-toggle" type="button" aria-controls="high-score-content" aria-expanded="false">High score</button>
+            <div class="detail-content high-score-content" id="high-score-content" tabindex="0" hidden>
+              <h2>Global high scores</h2>
+              <p class="high-score-status" id="high-score-status" role="status" aria-live="polite">Loading global scores…</p>
+              <ol class="high-score-list" id="high-score-list"></ol>
+            </div>
+          </section>
+        </div>
+      </header>
+    </div>
+    <a class="back-link" href="../index.html">← Back to Goober Arcade</a>
+  </main>
+  <script src="../assets/leaderboard.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const toggle = document.querySelector("#controls-toggle");
+      const panel = document.querySelector("#control-panel");
+      const details = document.querySelector("#detail-panels");
+      const descriptionToggle = document.querySelector("#description-toggle");
+      const descriptionContent = document.querySelector("#description-content");
+      const highScoreToggle = document.querySelector("#high-score-toggle");
+      const highScoreContent = document.querySelector("#high-score-content");
+      window.ArcadeLeaderboard.create("base-format");
+
+      function setOpen(open) {
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "Hide game controls" : "Show game controls");
+        toggle.title = open ? "Hide game controls" : "Show game controls";
+      }
+
+      toggle.addEventListener("click", () => setOpen(panel.hidden));
+      function setDetailView(view) {
+        const showDescription = view === "description";
+        details.dataset.view = view;
+        descriptionToggle.hidden = showDescription;
+        descriptionContent.hidden = !showDescription;
+        highScoreToggle.hidden = !showDescription;
+        highScoreContent.hidden = showDescription;
+        descriptionToggle.setAttribute("aria-expanded", String(!showDescription));
+        highScoreToggle.setAttribute("aria-expanded", String(showDescription));
+      }
+
+      descriptionToggle.addEventListener("click", () => setDetailView("description"));
+      highScoreToggle.addEventListener("click", () => setDetailView("high-score"));
+      document.addEventListener("click", (event) => {
+        if (!panel.hidden && !panel.contains(event.target) && !toggle.contains(event.target)) setOpen(false);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !panel.hidden) {
+          setOpen(false);
+          toggle.focus();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

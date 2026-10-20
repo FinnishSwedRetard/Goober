@@ -83,7 +83,7 @@
 </head>
 <body>
   <main>
-    <a class="arcade-link" href="index.html">← Back to the arcade</a>
+    <a class="arcade-link" href="../index.html">← Back to the arcade</a>
     <p class="eyebrow">One more line!</p>
     <h1>Mini Tetris</h1>
     <p class="subtitle">A quick classic. Clear lines, climb levels, chase your high score.</p>
@@ -106,10 +106,6 @@
         <button type="button" data-action="right" aria-label="Move right">→</button>
       </div>
     </section>
-    <div class="leaderboard">
-      <h3>Global leaderboard</h3>
-      <ol id="tetris-leaderboard"></ol>
-    </div>
     <p class="help">Move <b>← →</b> · Soft drop <b>↓</b> · Rotate <b>↑</b> · Hard drop <b>Space</b> · Pause <b>P</b></p>
   </main>
   <div class="overlay" id="overlay">
@@ -120,14 +116,7 @@
       <button id="start" type="button">Start game</button>
     </div>
   </div>
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-    const GAME_ID = "tetris";
-    const SUPABASE_URL = "https://yticogmmbpbqljfbtjag.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_YK--EsauidA8dnCoSLdJCQ_NAXytnyn";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+  <script>
     (() => {
       "use strict";
       const canvas = document.querySelector("#board");
@@ -173,71 +162,6 @@
       let best = 0;
       try { best = Number(localStorage.getItem("mini-tetris-best")) || 0; } catch { best = 0; }
       bestText.textContent = best;
-
-      async function loadGlobalLeaderboard() {
-        const list = document.getElementById("tetris-leaderboard");
-        if (!list) return;
-
-        list.innerHTML = "";
-
-        const { data, error } = await supabase
-          .from("game_scores")
-          .select("player_name, score")
-          .eq("game_id", GAME_ID)
-          .order("score", { ascending: false })
-          .limit(10);
-
-        if (error) {
-          const item = document.createElement("li");
-          item.textContent = "Could not load leaderboard.";
-          list.appendChild(item);
-          return;
-        }
-
-        if (!data || data.length === 0) {
-          const item = document.createElement("li");
-          item.textContent = "No scores yet.";
-          list.appendChild(item);
-          return;
-        }
-
-        data.forEach((entry, index) => {
-          const item = document.createElement("li");
-          item.textContent = `${index + 1}. ${entry.player_name} — ${entry.score}`;
-          list.appendChild(item);
-        });
-      }
-
-      async function submitGlobalScore(scoreValue) {
-        const name = prompt("New global high score! Enter your 3–5 letter name:", "");
-        if (!name) return;
-
-        const cleanName = name.trim().toUpperCase();
-        if (!/^[A-Z]{3,5}$/.test(cleanName)) {
-          alert("Use 3–5 letters only.");
-          return;
-        }
-
-        const { error } = await supabase
-          .from("game_scores")
-          .insert({
-            game_id: GAME_ID,
-            player_name: cleanName,
-            score: scoreValue
-          });
-
-        if (error) {
-          alert("Could not save score: " + error.message);
-          return;
-        }
-
-        loadGlobalLeaderboard();
-      }
-
-      function maybeSaveGlobalScore() {
-        if (score <= 0) return;
-        submitGlobalScore(score);
-      }
 
       function refillBag() {
         bag = Object.keys(shapes);
@@ -330,7 +254,6 @@
         startButton.textContent = "Play again";
         overlay.hidden = false;
         pauseButton.textContent = "Pause";
-        maybeSaveGlobalScore();
       }
       function startGame() {
         board = Array.from({ length: rows }, () => Array(columns).fill(null));
@@ -455,7 +378,6 @@
       document.querySelectorAll("[data-action]").forEach(button => {
         button.addEventListener("click", () => act(button.dataset.action));
       });
-      loadGlobalLeaderboard();
       lastFrame = performance.now();
       requestAnimationFrame(frame);
     })();

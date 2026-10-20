@@ -4,208 +4,437 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <title>Pixel Pocket Arcade</title>
+  <title>Goober Arcade</title>
   <style>
     :root {
       color-scheme: light dark;
-      font-family: "Segoe UI", Arial, sans-serif;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+      color: #242039;
       background: #fff;
-      color: #161616;
       font-synthesis: none;
       text-rendering: optimizeLegibility;
+      --card-width: clamp(250px, 28vw, 360px);
+      --page-background: #fff;
+      --heading-color: #49339d;
+      --card-background: #fff;
+      --card-title: #32285f;
+      --card-border: rgba(72, 56, 125, .18);
+      --link-color: #245dce;
     }
     * { box-sizing: border-box; }
     body {
+      min-width: 320px;
       min-height: 100vh;
       margin: 0;
-      background: #fff;
-      color: #161616;
-      transition: background-color .15s ease, color .15s ease;
+      overflow-x: hidden;
+      background: var(--page-background);
     }
-    .shell { width: min(100% - 32px, 820px); margin: 0 auto; padding: 34px 0; }
-    header {
+    .page {
       display: flex;
-      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
       justify-content: center;
-      gap: 15px;
-      margin-bottom: 26px;
+      padding: 44px 0 54px;
     }
-    h1 { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: -.06em; }
-    .mascot { width: 58px; height: 58px; border: 1px solid #dedede; border-radius: 50%; background: #fff; object-fit: cover; }
-    .refresh {
-      position: fixed;
-      top: 13px;
-      right: 14px;
-      width: 40px;
-      height: 40px;
-      border: 1px solid #d5d5d5;
-      border-radius: 50%;
-      background: #fff;
-      color: #161616;
-      cursor: pointer;
-      font: inherit;
-      font-size: 1.35rem;
+    .masthead {
+      padding: 0 20px;
+      text-align: center;
+    }
+    h1 {
+      display: inline-block;
+      margin: 0;
+      color: #5339bd;
+      font-size: clamp(2.4rem, 6vw, 4.4rem);
+      font-weight: 900;
+      letter-spacing: -.065em;
       line-height: 1;
+      text-shadow: 0 3px 0 #e7ddff;
     }
-    .refresh:hover { background: #f0f0f0; }
-    .refresh:focus-visible, .game-card:focus-visible { outline: 3px solid #6176e9; outline-offset: 3px; }
-    .refresh:disabled { cursor: wait; opacity: .55; }
-    .library { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .game-card {
-      --accent: #4b60bb;
+    .title-spark { color: #ff7d66; }
+    .readme-link {
+      position: fixed;
+      z-index: 2;
+      top: 12px;
+      left: 12px;
       display: grid;
-      grid-template-columns: 78px minmax(0, 1fr);
-      align-items: center;
-      gap: 15px;
-      min-width: 0;
-      padding: 16px;
-      border: 1px solid #dedede;
-      border-radius: 10px;
-      background: #fff;
-      color: inherit;
-      text-decoration: none;
-      transition: border-color .15s ease, transform .15s ease;
-    }
-    .game-card:hover { transform: translateY(-2px); border-color: var(--accent); }
-    .game-icon {
-      display: grid;
-      width: 72px;
-      height: 72px;
+      width: 42px;
+      height: 42px;
       place-items: center;
-      border-radius: 9px;
-      background: #f3f3f3;
-      font-size: 2.5rem;
+      border: 1px solid rgba(72, 56, 125, .16);
+      border-radius: 10px;
+      background: var(--card-background);
+      box-shadow: 0 3px 10px rgba(35, 28, 61, .2);
+      color: var(--heading-color);
+      font-size: 1.3rem;
+      font-weight: 900;
+      text-decoration: none;
+      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .game-card h2 { margin: 0; color: var(--accent); font-size: 1.08rem; }
-    .description { margin: 6px 0 0; color: #555; font-size: .87rem; line-height: 1.45; }
-    .message { margin: 18px 0 0; color: #555; font-size: .9rem; text-align: center; }
-    .message:empty { display: none; }
-    @media (prefers-color-scheme: dark) {
-      :root { background: #111; color: #f3f3f3; }
-      body { background: #111; color: #f3f3f3; }
-      .mascot { border-color: #444; }
-      .refresh { border-color: #454545; background: #1c1c1c; color: #f3f3f3; }
-      .refresh:hover { background: #292929; }
-      .game-card { border-color: #414141; background: #191919; }
-      .game-icon { background: #252525; }
-      .description, .message { color: #c2c2c2; }
+    .readme-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(35, 28, 61, .24);
     }
+    .readme-link:focus-visible, .projects-link:focus-visible {
+      outline: 3px solid #ff907b;
+      outline-offset: 3px;
+    }
+    .picker {
+      width: 100%;
+      margin: 38px auto 0;
+    }
+    .picker-top {
+      margin: 0 auto 14px;
+      padding: 0 16px;
+      text-align: center;
+    }
+    .picker-label {
+      margin: 0;
+      color: var(--heading-color);
+      font-size: clamp(1.2rem, 2.8vw, 1.55rem);
+      font-weight: 800;
+      letter-spacing: -.025em;
+    }
+    .picker-help {
+      margin: 7px 0 0;
+      color: var(--heading-color);
+      font-size: .9rem;
+      opacity: .8;
+    }
+    .track:focus-visible {
+      outline: 3px solid #ff907b;
+      outline-offset: 4px;
+    }
+    .track {
+      display: flex;
+      gap: 22px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      padding: 18px max(20px, calc((100vw - var(--card-width)) / 2)) 32px;
+      scroll-snap-type: none;
+      scrollbar-width: none;
+      cursor: grab;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+    }
+    .track.dragging { cursor: grabbing; }
+    .track::-webkit-scrollbar { display: none; }
+    .game-card {
+      display: grid;
+      width: var(--card-width);
+      min-width: var(--card-width);
+      aspect-ratio: 1;
+      grid-template-rows: minmax(0, 1fr) 68px;
+      overflow: hidden;
+      border: 2px solid var(--card-border);
+      border-radius: 30px;
+      background: var(--card-background);
+      box-shadow: 0 10px 28px rgba(52, 38, 100, .1);
+      color: inherit;
+      transform: scale(var(--card-scale, .78));
+      user-select: none;
+      transition: transform .22s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .game-card.is-active {
+      border-color: #6245c4;
+      box-shadow: 0 16px 38px rgba(52, 38, 100, .18);
+    }
+    .game-art {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .card-copy {
+      display: grid;
+      place-items: center;
+      padding: 8px 14px;
+      border-top: 2px solid var(--card-border);
+    }
+    .game-card h2 {
+      margin: 0;
+      color: var(--card-title);
+      font-size: 1.65rem;
+      letter-spacing: -.04em;
+    }
+    .projects-link {
+      position: fixed;
+      z-index: 2;
+      right: 16px;
+      bottom: 10px;
+      left: 16px;
+      color: var(--link-color);
+      font-size: .9rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      text-underline-offset: 3px;
+    }
+    .projects-link:hover { text-decoration: underline; }
     @media (max-width: 600px) {
-      .shell { width: min(100% - 24px, 440px); padding-top: 62px; }
-      .library { grid-template-columns: 1fr; gap: 9px; }
-      header { margin-bottom: 20px; }
+      :root { --card-width: min(75vw, 350px); }
+      .page { justify-content: flex-start; padding-top: 75px; }
+      .picker { margin-top: 54px; }
+      .track { gap: 16px; padding-top: 18px; }
+      .game-card { grid-template-rows: minmax(0, 1fr) 62px; }
     }
-    @media (max-width: 350px) {
-      .game-card { grid-template-columns: 58px minmax(0, 1fr); gap: 11px; padding: 12px; }
-      .game-icon { width: 56px; height: 56px; font-size: 2rem; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color: #f1eff8;
+        background: #1b1b20;
+        --page-background: #1b1b20;
+        --heading-color: #c5b8ff;
+        --card-background: #29282f;
+        --card-title: #f1eff8;
+        --card-border: rgba(202, 188, 255, .24);
+        --link-color: #8db4ff;
+      }
+      h1 { text-shadow: 0 3px 0 #352c50; }
+      .game-card.is-active { border-color: #a995ff; }
     }
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <header>
-      <img class="mascot" src="assets/mascot/oc.png" alt="">
-      <h1>Pixel Pocket Arcade</h1>
+  <a class="readme-link" href="https://github.com/FinnishSwedRetard/Goober#readme" aria-label="Read the Goober Arcade README" title="About this arcade">?</a>
+  <main class="page">
+    <header class="masthead">
+      <h1>Goober <span class="title-spark">Arcade</span></h1>
     </header>
-    <button class="refresh" id="refresh" type="button" aria-label="Check for new games" title="Check for new games">↻</button>
-    <nav class="library" id="games" aria-label="Games"></nav>
-    <p class="message" id="message" role="status" aria-live="polite"></p>
+
+    <section class="picker" aria-label="Game picker">
+      <div class="picker-top">
+        <h2 class="picker-label">Choose a game</h2>
+        <p class="picker-help">Scroll or use ← / → to switch games. Press ↵ Enter to open the centered game.</p>
+      </div>
+      <div class="track" id="games" role="list" aria-label="Games" tabindex="0"></div>
+    </section>
   </main>
+  <a class="projects-link" href="https://github.com/FinnishSwedRetard">Info and other Projects</a>
   <script>
     (() => {
       "use strict";
-      const library = document.querySelector("#games");
-      const message = document.querySelector("#message");
-      const refreshButton = document.querySelector("#refresh");
-      const colors = ["#485fba", "#a44c42", "#277a51", "#995c16", "#7650a4", "#197c86"];
-      let catalogRevision = Date.now().toString();
+      const track = document.querySelector("#games");
+      const games = [
+        { title: "Game" },
+        { title: "Game" },
+        { title: "Game" },
+        { title: "Game" },
+        { title: "Game" },
+        { title: "Snack Snake", href: "games/snack-snake.html", image: "assets/snack-snake.png" },
+        { title: "Mini Tetris", href: "games/tetris.html" }
+      ];
+      const gameCount = games.length;
+      const catImage = "assets/placeholder.png";
+      let activeIndex = 0;
+      let cards = [];
+      let scrollScheduled = false;
+      let dragStartX = 0;
+      let dragStartScroll = 0;
+      let isDragging = false;
+      let snapTimer = 0;
+      let animationFrame = 0;
+      let isProgrammaticScrolling = false;
 
-      function showError(error) {
-        console.error("Could not load the arcade game list:", error);
-        message.textContent = "Could not load games. Check your connection and try again.";
-      }
+      function updateActiveCard() {
+        if (!cards.length) return;
+        let center = track.scrollLeft + track.clientWidth / 2;
+        let closestIndex = 0;
+        let closestDistance = Infinity;
+        cards.forEach((card, index) => {
+          const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+          const distance = Math.abs(cardCenter - center);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
 
-      function validateCatalog(catalog) {
-        if (!Array.isArray(catalog)) throw new Error("The game list must be an array.");
-        const ids = new Set();
-        return catalog.map((game, index) => {
-          if (!game || typeof game !== "object") throw new Error(`Game ${index + 1} must be an object.`);
-          const { id, title, description, href, icon } = game;
-          if (typeof id !== "string" || !/^[a-z0-9-]+$/.test(id) || ids.has(id)) {
-            throw new Error(`Game ${index + 1} has an invalid or duplicate ID.`);
-          }
-          if (typeof title !== "string" || !title.trim()) throw new Error(`Game "${id}" needs a title.`);
-          if (typeof description !== "string" || !description.trim()) throw new Error(`Game "${id}" needs a description.`);
-          if (typeof href !== "string" || !/^[a-zA-Z0-9_./-]+\.html$/.test(href) || href.includes("..")) {
-            throw new Error(`Game "${id}" needs a relative HTML file path.`);
-          }
-          if (typeof icon !== "string" || !icon.trim() || icon.length > 12) throw new Error(`Game "${id}" needs a short icon.`);
-          const url = new URL(href, new URL("./", location.href));
-          if (url.origin !== location.origin || !url.pathname.startsWith(new URL("./", location.href).pathname)) {
-            throw new Error(`Game "${id}" must link to a local HTML file.`);
-          }
-          ids.add(id);
-          return { id, title: title.trim(), description: description.trim(), href, icon: icon.trim() };
+        const cycleWidth = cards[gameCount].offsetLeft - cards[0].offsetLeft;
+        if (!isProgrammaticScrolling && closestIndex < gameCount) {
+          track.scrollLeft += cycleWidth;
+          closestIndex += gameCount;
+        } else if (!isProgrammaticScrolling && closestIndex >= gameCount * 2) {
+          track.scrollLeft -= cycleWidth;
+          closestIndex -= gameCount;
+        }
+        center = track.scrollLeft + track.clientWidth / 2;
+
+        activeIndex = closestIndex;
+        cards.forEach((card, index) => {
+          card.classList.toggle("is-active", index === activeIndex);
+          const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+          const distance = Math.abs(cardCenter - center);
+          const scale = 1 - Math.min(distance / (card.offsetWidth * 4), .36);
+          card.style.setProperty("--card-scale", scale.toFixed(3));
         });
       }
 
-      function renderGames(games) {
-        const fragment = document.createDocumentFragment();
-        games.forEach((game, index) => {
-          const link = document.createElement("a");
-          link.className = "game-card";
-          link.href = game.href;
-          link.search = `?v=${encodeURIComponent(catalogRevision)}`;
-          link.style.setProperty("--accent", colors[index % colors.length]);
+      function scheduleActiveUpdate() {
+        if (scrollScheduled) return;
+        scrollScheduled = true;
+        requestAnimationFrame(() => {
+          scrollScheduled = false;
+          updateActiveCard();
+        });
+      }
 
-          const icon = document.createElement("span");
-          icon.className = "game-icon";
-          icon.setAttribute("aria-hidden", "true");
-          icon.textContent = game.icon;
+      function settleOnNearestCard() {
+        const center = track.scrollLeft + track.clientWidth / 2;
+        const nearest = cards.reduce((closest, card) => {
+          const distance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - center);
+          return distance < closest.distance ? { card, distance } : closest;
+        }, { card: cards[0], distance: Infinity });
+        if (nearest.distance < 1) return;
+        animateScrollTo(nearest.card.offsetLeft + nearest.card.offsetWidth / 2 - track.clientWidth / 2);
+      }
+
+      function animateScrollTo(target) {
+        window.cancelAnimationFrame(animationFrame);
+        const start = track.scrollLeft;
+        const distance = target - start;
+        const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 620;
+        isProgrammaticScrolling = true;
+        if (!duration || Math.abs(distance) < 1) {
+          track.scrollLeft = target;
+          isProgrammaticScrolling = false;
+          updateActiveCard();
+          return;
+        }
+
+        const startTime = performance.now();
+        function step(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          track.scrollLeft = start + distance * eased;
+          scheduleActiveUpdate();
+          if (progress < 1) {
+            animationFrame = window.requestAnimationFrame(step);
+          } else {
+            isProgrammaticScrolling = false;
+            updateActiveCard();
+          }
+        }
+        animationFrame = window.requestAnimationFrame(step);
+      }
+
+      function moveByCard(direction) {
+        const targetIndex = activeIndex + direction;
+        const targetCard = cards[targetIndex];
+        if (!targetCard) return;
+        animateScrollTo(targetCard.offsetLeft + targetCard.offsetWidth / 2 - track.clientWidth / 2);
+      }
+
+      function loadGameImage(image, source = catImage) {
+        image.addEventListener("error", () => {
+          if (image.dataset.placeholderFallback === "true") {
+            image.alt = "Placeholder image unavailable.";
+            return;
+          }
+          image.dataset.placeholderFallback = "true";
+          image.src = catImage;
+        });
+        image.src = source || catImage;
+      }
+
+      function renderGames() {
+        const fragment = document.createDocumentFragment();
+        for (let index = 0; index < gameCount * 3; index++) {
+          const game = games[index % gameCount];
+          const card = document.createElement(game.href ? "a" : "article");
+          card.className = "game-card";
+          card.setAttribute("role", "listitem");
+          if (game.href) {
+            card.href = game.href;
+            card.setAttribute("aria-label", `${game.title}, open this game`);
+            if (index < gameCount || index >= gameCount * 2) card.tabIndex = -1;
+          }
+          if (index < gameCount || index >= gameCount * 2) card.setAttribute("aria-hidden", "true");
+
+          const image = document.createElement("img");
+          image.className = "game-art";
+          image.alt = "";
+          image.draggable = false;
+          loadGameImage(image, game.image || catImage);
 
           const copy = document.createElement("div");
+          copy.className = "card-copy";
           const title = document.createElement("h2");
           title.textContent = game.title;
-          const description = document.createElement("p");
-          description.className = "description";
-          description.textContent = game.description;
-          copy.append(title, description);
-          link.append(icon, copy);
-          fragment.append(link);
-        });
-        library.replaceChildren(fragment);
-        message.textContent = "";
+          copy.append(title);
+          card.append(image, copy);
+          fragment.append(card);
+        }
+        track.replaceChildren(fragment);
+        cards = Array.from(track.querySelectorAll(".game-card"));
+        activeIndex = Math.floor(gameCount * 1.5);
+        track.scrollLeft = cards[activeIndex].offsetLeft + cards[activeIndex].offsetWidth / 2 - track.clientWidth / 2;
+        updateActiveCard();
       }
 
-      function loadGames() {
-        refreshButton.disabled = true;
-        message.textContent = "";
-        catalogRevision = Date.now().toString();
-        const script = document.createElement("script");
-        script.src = `games.js?v=${encodeURIComponent(catalogRevision)}`;
-        script.onload = () => {
-          refreshButton.disabled = false;
-          try {
-            renderGames(validateCatalog(window.ARCADE_GAMES));
-          } catch (error) {
-            showError(error);
-          }
-          delete window.ARCADE_GAMES;
-          script.remove();
-        };
-        script.onerror = () => {
-          refreshButton.disabled = false;
-          script.remove();
-          showError(new Error("games.js could not be loaded."));
-        };
-        document.head.append(script);
-      }
-
-      refreshButton.addEventListener("click", loadGames);
-      loadGames();
+      track.addEventListener("scroll", () => {
+        scheduleActiveUpdate();
+        if (!isProgrammaticScrolling) {
+          window.clearTimeout(snapTimer);
+          snapTimer = window.setTimeout(settleOnNearestCard, 180);
+        }
+      }, { passive: true });
+      document.addEventListener("keydown", (event) => {
+        if (event.altKey || event.ctrlKey || event.metaKey
+          || event.target instanceof HTMLElement
+          && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName))) {
+          return;
+        }
+        if (event.key === "Enter" && event.target === track) {
+          const game = games[activeIndex % gameCount];
+          if (game.href) window.location.href = game.href;
+          return;
+        }
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          moveByCard(event.key === "ArrowLeft" ? -1 : 1);
+        }
+      });
+      track.addEventListener("wheel", (event) => {
+        window.cancelAnimationFrame(animationFrame);
+        isProgrammaticScrolling = false;
+        if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+          event.preventDefault();
+          track.scrollLeft += event.deltaY;
+        }
+      }, { passive: false });
+      track.addEventListener("pointerdown", (event) => {
+        if (event.pointerType !== "mouse" || event.button !== 0) return;
+        window.cancelAnimationFrame(animationFrame);
+        isProgrammaticScrolling = false;
+        dragStartX = event.clientX;
+        dragStartScroll = track.scrollLeft;
+        isDragging = true;
+        track.setPointerCapture(event.pointerId);
+      });
+      track.addEventListener("pointermove", (event) => {
+        if (!isDragging) return;
+        if (Math.abs(event.clientX - dragStartX) > 3) track.classList.add("dragging");
+        if (track.classList.contains("dragging")) {
+          event.preventDefault();
+          track.scrollLeft = dragStartScroll + dragStartX - event.clientX;
+        }
+      });
+      const endDrag = () => {
+        isDragging = false;
+        track.classList.remove("dragging");
+        scheduleActiveUpdate();
+      };
+      track.addEventListener("pointerup", endDrag);
+      track.addEventListener("pointercancel", endDrag);
+      window.addEventListener("resize", scheduleActiveUpdate, { passive: true });
+      renderGames();
     })();
   </script>
 </body>

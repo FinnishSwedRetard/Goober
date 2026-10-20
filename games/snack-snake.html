@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Snack Snake | Goober Arcade</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+      color: #292442;
+      background: #fff;
+      --page-background: #fff;
+      --surface: #fff;
+      --border: #dcd8e8;
+      --muted: #777187;
+      --accent: #5339bd;
+      --stage-background: #f5f3fa;
+      --stage-grid: rgba(83, 57, 189, .07);
+      --description-background: #e1e1e1;
+      --snake-head: #42a878;
+      --snake-body: #68c58d;
+      --snake-eye: #163d30;
+      --snack-color: #ef6370;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--page-background);
+    }
+    .page { min-height: 100vh; padding: 15px 15px 76px; }
+    .back-link {
+      position: fixed;
+      z-index: 3;
+      right: 15px;
+      bottom: 15px;
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      padding: 0 15px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 3px 10px rgba(35, 28, 61, .16);
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .back-link:hover { box-shadow: 0 5px 14px rgba(35, 28, 61, .22); }
+    .workspace {
+      display: grid;
+      width: 100%;
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+      align-items: start;
+    }
+    .game-frame { width: 100%; max-width: 1150px; }
+    .title-panel {
+      width: min(100%, 440px);
+      justify-self: center;
+      padding: 0 12px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      letter-spacing: -.05em;
+      text-align: center;
+    }
+    .detail-panels {
+      display: grid;
+      height: min(68vh, 600px);
+      min-height: 260px;
+      grid-template-rows: minmax(0, 1fr) 30px;
+      gap: 5px;
+      transition: grid-template-rows .9s cubic-bezier(.22, .68, 0, 1);
+    }
+    .detail-panels[data-view="high-score"] { grid-template-rows: 30px minmax(0, 1fr); }
+    .detail-panel {
+      display: grid;
+      min-height: 0;
+      grid-template-rows: minmax(0, 1fr);
+      overflow: hidden;
+      border-radius: 14px;
+      background: var(--description-background);
+    }
+    .detail-tab {
+      width: 100%;
+      height: 30px;
+      overflow: hidden;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 700;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .detail-tab:hover { border-color: var(--accent); }
+    .detail-tab:focus-visible, .controls-toggle:focus-visible, .back-link:focus-visible,
+    .control-panel:focus-visible, .start-button:focus-visible, .touch button:focus-visible {
+      outline: 3px solid #ff907b;
+      outline-offset: 3px;
+    }
+    .detail-content {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 40px 34px;
+      color: var(--muted);
+      line-height: 1.6;
+      scrollbar-gutter: stable;
+    }
+    .detail-content[hidden], .detail-tab[hidden] { display: none; }
+    .detail-content:not([hidden]), .detail-tab:not([hidden]) {
+      animation: detail-panel-enter .9s ease-out both;
+    }
+    @keyframes detail-panel-enter {
+      from { opacity: .55; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .detail-content p { margin: 0; }
+    .description-content { font-size: 1.05rem; }
+    .high-score-content { display: grid; align-content: start; gap: 14px; }
+    .high-score-content h2 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.4rem;
+    }
+    .high-score-value {
+      color: var(--accent);
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+    .high-score-note { color: var(--muted); font-size: .9rem; }
+    .high-score-status { margin: 0; color: var(--muted); font-size: .86rem; }
+    .high-score-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .high-score-list li {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .score-rank { color: var(--accent); font-weight: 800; }
+    .score-name { overflow: hidden; font-weight: 800; text-overflow: ellipsis; }
+    .score-value { color: var(--accent); }
+    .high-score-list .score-empty { opacity: .55; }
+    .game-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1150 / 800;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--stage-background);
+    }
+    #game {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    .hud {
+      position: absolute;
+      z-index: 1;
+      top: 14px;
+      left: 50%;
+      display: flex;
+      gap: 10px;
+      transform: translateX(-50%);
+    }
+    .hud-item {
+      min-width: 100px;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--surface) 90%, transparent);
+      color: var(--muted);
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-align: center;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+    .hud-item strong {
+      display: block;
+      margin-top: 2px;
+      color: var(--accent);
+      font-size: 1.1rem;
+      letter-spacing: 0;
+    }
+    .game-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 20, 24, .3);
+      backdrop-filter: blur(3px);
+    }
+    .game-overlay[hidden] { display: none; }
+    .start-card {
+      width: min(100%, 360px);
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: 0 16px 48px rgba(35, 28, 61, .2);
+      color: var(--muted);
+      line-height: 1.5;
+      text-align: center;
+    }
+    .start-card h2 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.7rem;
+    }
+    .start-card p { margin: 8px 0 18px; }
+    .start-button {
+      min-height: 44px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 10px;
+      background: #6acb91;
+      color: #123b2c;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 900;
+    }
+    .start-button:hover { background: #85dda8; }
+    .game-tools {
+      position: relative;
+      display: flex;
+      min-height: 52px;
+      align-items: center;
+      gap: 14px;
+      margin-top: 10px;
+      padding-left: 10px;
+    }
+    .controls-toggle {
+      display: grid;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 3px 10px rgba(35, 28, 61, .2);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.35rem;
+    }
+    .control-panel {
+      position: absolute;
+      z-index: 4;
+      bottom: 100%;
+      left: 10px;
+      width: min(340px, calc(100vw - 52px));
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(35, 28, 61, .16);
+    }
+    .control-panel[hidden] { display: none; }
+    .control-panel h2 {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .control-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .control-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .key-group { display: inline-flex; min-width: 88px; gap: 4px; }
+    kbd {
+      display: inline-grid;
+      min-width: 28px;
+      height: 28px;
+      place-items: center;
+      padding: 0 6px;
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      background: var(--page-background);
+      color: var(--accent);
+      font: 700 .82rem Consolas, monospace;
+    }
+    .hint { margin: 12px 0 0; color: var(--muted); font-size: .76rem; }
+    .touch {
+      display: grid;
+      grid-template-columns: repeat(3, 38px);
+      grid-template-rows: repeat(2, 34px);
+      gap: 4px;
+      margin-left: auto;
+      margin-right: 10px;
+    }
+    .touch button {
+      min-height: 32px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      touch-action: manipulation;
+    }
+    .touch [data-dir="up"] { grid-column: 2; grid-row: 1; }
+    .touch [data-dir="left"] { grid-column: 1; grid-row: 2; }
+    .touch [data-dir="down"] { grid-column: 2; grid-row: 2; }
+    .touch [data-dir="right"] { grid-column: 3; grid-row: 2; }
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+      .title-panel { grid-row: 2; width: min(100%, 520px); padding: 0; }
+      .game-frame { grid-row: 1; }
+      .detail-panels { height: min(42vh, 360px); min-height: 180px; }
+      .detail-content { padding: 24px 20px; }
+      h1 { font-size: clamp(2rem, 7vw, 3rem); }
+    }
+    @media (max-width: 520px) {
+      .page { padding: 10px 10px 70px; }
+      .hud { top: 8px; gap: 5px; }
+      .hud-item { min-width: 76px; padding: 6px 8px; font-size: .6rem; }
+      .hud-item strong { font-size: .95rem; }
+      .start-card { padding: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .detail-panels { transition: none; }
+      .detail-content:not([hidden]), .detail-tab:not([hidden]) { animation: none; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color: #f1eff8;
+        background: #1b1b20;
+        --page-background: #1b1b20;
+        --surface: #29282f;
+        --border: #4b4854;
+        --muted: #b7b2c2;
+        --accent: #c5b8ff;
+        --stage-background: #232229;
+        --stage-grid: rgba(197, 184, 255, .07);
+        --description-background: #36353b;
+        --snake-head: #83e2a9;
+        --snake-body: #54bd80;
+        --snake-eye: #173d2c;
+        --snack-color: #ff8790;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="workspace">
+      <section class="game-frame" aria-label="Snack Snake game">
+        <div class="game-stage">
+          <canvas id="game" width="1150" height="800" tabindex="0" aria-label="Snack Snake playfield. Use WASD or arrow keys to move, Space to pause."></canvas>
+          <div class="hud" aria-live="polite">
+            <div class="hud-item">Score<strong id="score">0</strong></div>
+            <div class="hud-item">Best<strong id="best">0</strong></div>
+          </div>
+          <div class="game-overlay" id="game-overlay">
+            <div class="start-card">
+              <h2 id="overlay-title">Ready to snack?</h2>
+              <p id="overlay-message">Eat the snacks, grow your snake, and avoid the walls and your tail.</p>
+              <button class="start-button" id="start-button" type="button">Start game</button>
+            </div>
+          </div>
+        </div>
+        <div class="game-tools">
+          <button
+            class="controls-toggle"
+            id="controls-toggle"
+            type="button"
+            aria-label="Show game controls"
+            aria-controls="control-panel"
+            aria-expanded="false"
+            title="Show game controls"
+          >🎮</button>
+          <section class="control-panel" id="control-panel" aria-labelledby="controls-title" hidden>
+            <h2 id="controls-title">Controls</h2>
+            <ul class="control-list">
+              <li><span class="key-group"><kbd>W</kbd><kbd>↑</kbd></span><span>Move up</span></li>
+              <li><span class="key-group"><kbd>A</kbd><kbd>←</kbd></span><span>Move left</span></li>
+              <li><span class="key-group"><kbd>S</kbd><kbd>↓</kbd></span><span>Move down</span></li>
+              <li><span class="key-group"><kbd>D</kbd><kbd>→</kbd></span><span>Move right</span></li>
+              <li><span class="key-group"><kbd>Space</kbd><kbd>P</kbd></span><span>Pause or resume</span></li>
+            </ul>
+            <p class="hint">You can also use the on-screen direction pad.</p>
+          </section>
+          <div class="touch" aria-label="Touch controls">
+            <button type="button" data-dir="up" aria-label="Go up">↑</button>
+            <button type="button" data-dir="left" aria-label="Go left">←</button>
+            <button type="button" data-dir="down" aria-label="Go down">↓</button>
+            <button type="button" data-dir="right" aria-label="Go right">→</button>
+          </div>
+        </div>
+      </section>
+      <header class="title-panel">
+        <h1>Snack Snake</h1>
+        <div class="detail-panels" id="detail-panels" data-view="description">
+          <section class="detail-panel" aria-label="Game description">
+            <button class="detail-tab" id="description-toggle" type="button" aria-controls="description-content" aria-expanded="false" hidden>Read description</button>
+            <div class="detail-content description-content" id="description-content" tabindex="0">
+              <p>Guide your snake around the game area and gobble up snacks to grow. Don't hit the walls or run into your own tail. The snake gets faster as your score climbs. Your best score is saved on this device.</p>
+            </div>
+          </section>
+          <section class="detail-panel" aria-label="Global high scores">
+            <button class="detail-tab" id="high-score-toggle" type="button" aria-controls="high-score-content" aria-expanded="false">High score</button>
+            <div class="detail-content high-score-content" id="high-score-content" tabindex="0" hidden>
+              <h2>Global high scores</h2>
+              <p class="high-score-status" id="high-score-status" role="status" aria-live="polite">Loading global scores…</p>
+              <ol class="high-score-list" id="high-score-list"></ol>
+            </div>
+          </section>
+        </div>
+      </header>
+    </div>
+    <a class="back-link" href="../index.html">← Back to Goober Arcade</a>
+  </main>
+  <script src="../assets/leaderboard.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const canvas = document.querySelector("#game");
+      const ctx = canvas.getContext("2d");
+      const overlay = document.querySelector("#game-overlay");
+      const overlayTitle = document.querySelector("#overlay-title");
+      const overlayMessage = document.querySelector("#overlay-message");
+      const startButton = document.querySelector("#start-button");
+      const scoreLabel = document.querySelector("#score");
+      const bestLabel = document.querySelector("#best");
+      const controlToggle = document.querySelector("#controls-toggle");
+      const controlPanel = document.querySelector("#control-panel");
+      const details = document.querySelector("#detail-panels");
+      const descriptionToggle = document.querySelector("#description-toggle");
+      const descriptionContent = document.querySelector("#description-content");
+      const highScoreToggle = document.querySelector("#high-score-toggle");
+      const highScoreContent = document.querySelector("#high-score-content");
+      const leaderboard = window.ArcadeLeaderboard.create("snack-snake");
+      const columns = 35;
+      const rows = 24;
+      const tileSize = 32;
+      const boardLeft = (canvas.width - columns * tileSize) / 2;
+      const boardTop = (canvas.height - rows * tileSize) / 2;
+      let snake = [];
+      let snack = { x: 25, y: 12 };
+      let direction = { x: 1, y: 0 };
+      let queuedDirection = { x: 1, y: 0 };
+      let score = 0;
+      let best = 0;
+      let state = "ready";
+      let accumulator = 0;
+      let lastFrame = 0;
+      let tickCount = 0;
+      let randomSeed = 1;
+      let runSessionId = null;
+      let runEvents = [];
+
+      try {
+        best = Math.max(0, Number(localStorage.getItem("snack-snake-best")) || 0);
+      } catch (error) {
+        console.warn("Could not read the local Snack Snake high score.", error);
+      }
+      bestLabel.textContent = String(best);
+
+      function random() {
+        randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
+        return randomSeed / 4294967296;
+      }
+
+      function color(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      }
+
+      function setDetailView(view) {
+        const showDescription = view === "description";
+        details.dataset.view = view;
+        descriptionToggle.hidden = showDescription;
+        descriptionContent.hidden = !showDescription;
+        highScoreToggle.hidden = !showDescription;
+        highScoreContent.hidden = showDescription;
+        descriptionToggle.setAttribute("aria-expanded", String(!showDescription));
+        highScoreToggle.setAttribute("aria-expanded", String(showDescription));
+      }
+
+      function setControlsOpen(open) {
+        controlPanel.hidden = !open;
+        controlToggle.setAttribute("aria-expanded", String(open));
+        controlToggle.setAttribute("aria-label", open ? "Hide game controls" : "Show game controls");
+        controlToggle.title = open ? "Hide game controls" : "Show game controls";
+      }
+
+      function spawnSnack() {
+        const empty = [];
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < columns; x++) {
+            if (!snake.some(part => part.x === x && part.y === y)) empty.push({ x, y });
+          }
+        }
+        if (empty.length) snack = empty[Math.floor(random() * empty.length)];
+      }
+
+      async function startGame() {
+        if (state === "starting") return;
+        state = "starting";
+        overlay.hidden = false;
+        overlayTitle.textContent = "Connecting to the leaderboard…";
+        overlayMessage.textContent = "Starting a verified game session.";
+        startButton.disabled = true;
+        startButton.textContent = "Connecting…";
+        try {
+          const session = await leaderboard.startRun();
+          runSessionId = session.sessionId;
+          randomSeed = Number(session.seed) >>> 0;
+        } catch (error) {
+          console.error("Could not start a verified Snack Snake session.", error);
+          const playUnranked = window.confirm(
+            "The global leaderboard is unavailable. Start an unranked game instead?"
+          );
+          if (!playUnranked) {
+            state = "ready";
+            overlayTitle.textContent = "Ready to snack?";
+            overlayMessage.textContent = "Eat the snacks, grow your snake, and avoid the walls and your tail.";
+            startButton.disabled = false;
+            startButton.textContent = "Start game";
+            return;
+          }
+          runSessionId = null;
+          randomSeed = crypto.getRandomValues(new Uint32Array(1))[0];
+        }
+        snake = [
+          { x: Math.floor(columns / 2), y: Math.floor(rows / 2) },
+          { x: Math.floor(columns / 2) - 1, y: Math.floor(rows / 2) },
+          { x: Math.floor(columns / 2) - 2, y: Math.floor(rows / 2) }
+        ];
+        direction = { x: 1, y: 0 };
+        queuedDirection = { x: 1, y: 0 };
+        score = 0;
+        accumulator = 0;
+        tickCount = 0;
+        runEvents = [];
+        scoreLabel.textContent = "0";
+        state = "playing";
+        spawnSnack();
+        overlay.hidden = true;
+        startButton.disabled = false;
+        canvas.focus();
+        lastFrame = performance.now();
+      }
+
+      function setDirection(x, y) {
+        if (state !== "playing") return;
+        if (x === -queuedDirection.x && y === -queuedDirection.y) return;
+        const targetTick = tickCount + 1;
+        let actionsAtTick = 0;
+        for (let index = runEvents.length - 1; index >= 0 && runEvents[index].tick === targetTick; index--) {
+          actionsAtTick++;
+        }
+        if (runSessionId && actionsAtTick >= 3) return;
+        queuedDirection = { x, y };
+        if (runSessionId && runEvents.length < 25_000) {
+          runEvents.push({ tick: targetTick, action: y < 0 ? "up" : y > 0 ? "down" : x < 0 ? "left" : "right" });
+        } else if (runSessionId) {
+          runSessionId = null;
+          document.querySelector("#high-score-status").textContent =
+            "This round exceeded the replay limit and will not be ranked.";
+        }
+      }
+
+      function endGame(won) {
+        state = "over";
+        if (score > best) {
+          best = score;
+          bestLabel.textContent = String(best);
+          try {
+            localStorage.setItem("snack-snake-best", String(best));
+          } catch (error) {
+            console.warn("Could not save the local Snack Snake high score.", error);
+          }
+        }
+        overlayTitle.textContent = won ? "Board cleared!" : "Game over";
+        overlayMessage.textContent = `${won ? "You ate every snack!" : "Nice run!"} Score: ${score}. Your best is ${best}.`;
+        startButton.textContent = "Play again";
+        overlay.hidden = false;
+        if (runSessionId) {
+          void leaderboard.finishRun({
+            sessionId: runSessionId,
+            score,
+            ticks: tickCount,
+            events: runEvents
+          });
+        } else {
+          document.querySelector("#high-score-status").textContent =
+            "This round was unranked because it had no verified game session.";
+        }
+      }
+
+      function tick() {
+        tickCount++;
+        direction = queuedDirection;
+        const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+        const eating = head.x === snack.x && head.y === snack.y;
+        const body = eating ? snake : snake.slice(0, -1);
+        if (head.x < 0 || head.x >= columns || head.y < 0 || head.y >= rows
+          || body.some(part => part.x === head.x && part.y === head.y)) {
+          endGame(false);
+          return;
+        }
+        snake.unshift(head);
+        if (eating) {
+          score++;
+          scoreLabel.textContent = String(score);
+          if (snake.length === columns * rows) {
+            endGame(true);
+            return;
+          }
+          spawnSnack();
+        } else {
+          snake.pop();
+        }
+      }
+
+      function roundedTile(x, y, inset, fill, radius) {
+        const left = boardLeft + x * tileSize + inset;
+        const top = boardTop + y * tileSize + inset;
+        const size = tileSize - inset * 2;
+        ctx.fillStyle = fill;
+        ctx.beginPath();
+        ctx.roundRect(left, top, size, size, radius);
+        ctx.fill();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = color("--stage-background");
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = color("--stage-grid");
+        for (let x = 0; x <= columns; x++) {
+          ctx.fillRect(boardLeft + x * tileSize, boardTop, 1, rows * tileSize);
+        }
+        for (let y = 0; y <= rows; y++) {
+          ctx.fillRect(boardLeft, boardTop + y * tileSize, columns * tileSize, 1);
+        }
+
+        const foodX = boardLeft + (snack.x + .5) * tileSize;
+        const foodY = boardTop + (snack.y + .5) * tileSize;
+        ctx.fillStyle = color("--snack-color");
+        ctx.shadowColor = color("--snack-color");
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(foodX, foodY + 2, tileSize * .31, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#5c9d55";
+        ctx.beginPath();
+        ctx.ellipse(foodX + 7, foodY - 10, 7, 4, -.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        snake.forEach((part, index) => {
+          roundedTile(part.x, part.y, 2, index === 0 ? color("--snake-head") : color("--snake-body"), 9);
+        });
+        if (snake.length) {
+          const head = snake[0];
+          const centerX = boardLeft + (head.x + .5) * tileSize;
+          const centerY = boardTop + (head.y + .5) * tileSize;
+          const forwardX = direction.x * 6;
+          const forwardY = direction.y * 6;
+          const sideX = direction.y * 7;
+          const sideY = direction.x * -7;
+          ctx.fillStyle = color("--snake-eye");
+          ctx.beginPath();
+          ctx.arc(centerX + forwardX + sideX, centerY + forwardY + sideY, 2.8, 0, Math.PI * 2);
+          ctx.arc(centerX + forwardX - sideX, centerY + forwardY - sideY, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function frame(now) {
+        const elapsed = Math.min(now - lastFrame, 100);
+        lastFrame = now;
+        if (state === "playing") {
+          accumulator += elapsed;
+          const interval = Math.max(72, 145 - Math.floor(score / 5) * 10);
+          while (accumulator >= interval && state === "playing") {
+            accumulator -= interval;
+            tick();
+          }
+        }
+        draw();
+        window.requestAnimationFrame(frame);
+      }
+
+      function togglePause() {
+        if (state === "playing") {
+          state = "paused";
+          overlayTitle.textContent = "Taking a break?";
+          overlayMessage.textContent = "Your snake will wait right here.";
+          startButton.textContent = "Resume";
+          overlay.hidden = false;
+        } else if (state === "paused") {
+          state = "playing";
+          overlay.hidden = true;
+          canvas.focus();
+          lastFrame = performance.now();
+        }
+      }
+
+      const directions = {
+        arrowup: [0, -1], w: [0, -1],
+        arrowleft: [-1, 0], a: [-1, 0],
+        arrowdown: [0, 1], s: [0, 1],
+        arrowright: [1, 0], d: [1, 0]
+      };
+      document.addEventListener("keydown", (event) => {
+        const key = event.key.toLowerCase();
+        if (event.altKey || event.ctrlKey || event.metaKey
+          || event.target instanceof HTMLElement
+          && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(event.target.tagName))) {
+          return;
+        }
+        if (key === " " || key === "p") {
+          event.preventDefault();
+          togglePause();
+          return;
+        }
+        if (directions[key]) {
+          event.preventDefault();
+          const [x, y] = directions[key];
+          setDirection(x, y);
+        }
+      });
+
+      document.querySelectorAll("[data-dir]").forEach(button => {
+        button.addEventListener("click", () => {
+          const [x, y] = directions[button.dataset.dir === "up" ? "w"
+            : button.dataset.dir === "down" ? "s"
+              : button.dataset.dir === "left" ? "a" : "d"];
+          setDirection(x, y);
+          canvas.focus();
+        });
+      });
+      startButton.addEventListener("click", () => {
+        if (state === "paused") togglePause();
+        else startGame();
+      });
+      controlToggle.addEventListener("click", () => setControlsOpen(controlPanel.hidden));
+      descriptionToggle.addEventListener("click", () => setDetailView("description"));
+      highScoreToggle.addEventListener("click", () => setDetailView("high-score"));
+      document.addEventListener("click", (event) => {
+        if (!controlPanel.hidden && !controlPanel.contains(event.target) && !controlToggle.contains(event.target)) {
+          setControlsOpen(false);
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !controlPanel.hidden) {
+          setControlsOpen(false);
+          controlToggle.focus();
+        }
+      });
+
+      draw();
+      lastFrame = performance.now();
+      window.requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

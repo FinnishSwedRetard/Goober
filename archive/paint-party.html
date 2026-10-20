@@ -144,15 +144,15 @@
 <body>
   <div class="page">
     <div class="topbar">
-      <a class="arcade-link" href="index.html">← Back to the arcade</a>
+      <a class="arcade-link" href="../index.html">← Back to the arcade</a>
     </div>
 
     <div class="game-shell">
       <div class="canvas-wrap">
         <p class="game-info">
-          <strong>Paint Party</strong> is a live shared canvas. Pick a color and click the board to paint one square at a time. Everyone who opens this page can see the same drawing update in real time.
+          <strong>Paint Party</strong> is a local canvas. Pick a color and click the board to paint one square at a time.
         </p>
-        <canvas id="board" width="500" height="500" aria-label="Shared paint board"></canvas>
+        <canvas id="board" width="500" height="500" aria-label="Local paint board"></canvas>
       </div>
 
       <div class="tools">
@@ -161,26 +161,19 @@
           <input id="color" type="color" value="#ff0000" aria-label="Choose paint color" />
         </div>
 
-        <div id="status" class="status" aria-live="polite">Loading board...</div>
+        <div id="status" class="status" aria-live="polite">Local board ready</div>
 
         <div class="panel">
           <strong>How to play:</strong><br>
           Click a square on the board to paint it.<br>
-          Everyone sees the change live.<br>
+          Your drawing stays on this page.<br>
           Pick a new color to keep drawing.
         </div>
       </div>
     </div>
   </div>
 
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-    const SUPABASE_URL = "https://yticogmmbpbqljfbtjag.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_YK--EsauidA8dnCoSLdJCQ_NAXytnyn";
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+  <script>
     const canvas = document.getElementById("board");
     const ctx = canvas.getContext("2d");
     const colorInput = document.getElementById("color");
@@ -188,9 +181,6 @@
 
     const CELL = 25;
     const GRID = 500 / CELL;
-    let lastPaint = 0;
-    const cooldownSeconds = 60;
-
     function drawBoardBase() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -218,68 +208,18 @@
       return { x, y };
     }
 
-    async function loadBoard() {
-      const { data, error } = await supabase
-        .from("paint_cells")
-        .select("*");
-
-      if (error) {
-        statusEl.textContent = "Could not load board.";
-        console.error(error);
-        return;
-      }
-
-      drawBoardBase();
-
-      for (const cell of data) {
-        drawCell(cell.x, cell.y, cell.color);
-      }
-
-      statusEl.textContent = "Board ready";
+    function paintCell(x, y) {
+      drawCell(x, y, colorInput.value);
+      statusEl.textContent = "Painted locally";
     }
 
-    async function paintCell(x, y) {
-      const now = Date.now();
-      const elapsed = Math.floor((now - lastPaint) / 1000);
-
-      if (lastPaint && elapsed < cooldownSeconds) {
-        statusEl.textContent = "Cooldown: " + (cooldownSeconds - elapsed) + "s";
-        return;
-      }
-
-      lastPaint = now;
-      const color = colorInput.value;
-
-      const { error } = await supabase
-        .from("paint_cells")
-        .upsert({ x, y, color }, { onConflict: "x,y" });
-
-      if (error) {
-        statusEl.textContent = "Paint failed";
-        console.error(error);
-      } else {
-        statusEl.textContent = "Paint sent";
-      }
-    }
-
-    canvas.addEventListener("click", async (event) => {
+    canvas.addEventListener("click", (event) => {
       const cell = getCellFromEvent(event);
       if (!cell) return;
-      await paintCell(cell.x, cell.y);
+      paintCell(cell.x, cell.y);
     });
 
-    supabase
-      .channel("paint-room")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "paint_cells" }, (payload) => {
-        drawCell(payload.new.x, payload.new.y, payload.new.color);
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "paint_cells" }, (payload) => {
-        drawCell(payload.new.x, payload.new.y, payload.new.color);
-      })
-      .subscribe();
-
     drawBoardBase();
-    loadBoard();
   </script>
 </body>
 </html>

@@ -356,7 +356,8 @@ function verifyFlappyRat(seed: number, ticks: number, events: Array<{ tick: numb
       obstacle.x -= speed;
       const gapTop = obstacle.gapCenter - gapHeight / 2;
       const gapBottom = obstacle.gapCenter + gapHeight / 2;
-      if (obstacle.special && !obstacle.dropSpawned && obstacle.x <= playerX + 36) {
+      if (obstacle.special && !obstacle.dropSpawned
+        && obstacle.x + pipeWidth / 2 <= playerX) {
         obstacle.dropSpawned = true;
         droplets.push({ x: obstacle.x + pipeWidth / 2, y: gapTop + 18 });
       }

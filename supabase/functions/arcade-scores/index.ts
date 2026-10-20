@@ -7,7 +7,7 @@ const allowedOrigins = new Set([
   "http://localhost:8765",
   "http://127.0.0.1:8765"
 ]);
-const gameIds = new Set(["snack-snake", "mini-tetris"]);
+const gameIds = new Set(["snack-snake", "mini-tetris", "flappy-rat"]);
 const maxTicks = 100_000;
 const maxEvents = 25_000;
 
@@ -271,6 +271,128 @@ function verifyTetris(seed: number, ticks: number, events: Array<{ tick: number;
     ? score : null;
 }
 
+function verifyFlappyRat(seed: number, ticks: number, events: Array<{ tick: number; action: string }>) {
+  const width = 1150;
+  const height = 800;
+  const playerX = 280;
+  const playerRadius = 22;
+  const pipeWidth = 96;
+  const gapHeight = 244;
+  let randomSeed = seed >>> 0;
+  const random = () => {
+    randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
+    return randomSeed / 4294967296;
+  };
+  let score = 0;
+  let gameTicks = 0;
+  let ratY = 400;
+  let upHeld = false;
+  let downHeld = false;
+  let fastHeld = false;
+  let slowHeld = false;
+  let boostCharges = 0;
+  let boostTicks = 0;
+  let obstacles: Array<{
+    x: number;
+    gapCenter: number;
+    special: boolean;
+    passed: boolean;
+    dropSpawned: boolean;
+  }> = [];
+  let droplets: Array<{ x: number; y: number }> = [];
+  let powerups: Array<{ x: number; y: number; collected: boolean }> = [];
+  let nextObstacleTick = 38;
+  let eventIndex = 0;
+
+  function spawnObstacle() {
+    const obstacle = {
+      x: width + 30,
+      gapCenter: 270 + random() * 260,
+      special: random() < .36,
+      passed: false,
+      dropSpawned: false
+    };
+    obstacles.push(obstacle);
+    if (random() < .62) {
+      powerups.push({
+        x: obstacle.x + 166,
+        y: obstacle.gapCenter + (random() * 100 - 50),
+        collected: false
+      });
+    }
+    nextObstacleTick += 72;
+  }
+
+  for (let tick = 1; tick <= ticks; tick++) {
+    gameTicks = tick;
+    score++;
+    let pendingBoost = false;
+    while (eventIndex < events.length && events[eventIndex].tick === tick) {
+      switch (events[eventIndex].action) {
+        case "up_on": upHeld = true; break;
+        case "up_off": upHeld = false; break;
+        case "down_on": downHeld = true; break;
+        case "down_off": downHeld = false; break;
+        case "fast_on": fastHeld = true; break;
+        case "fast_off": fastHeld = false; break;
+        case "slow_on": slowHeld = true; break;
+        case "slow_off": slowHeld = false; break;
+        case "boost": pendingBoost = true; break;
+      }
+      eventIndex++;
+    }
+    if (pendingBoost && boostCharges > 0) {
+      boostCharges--;
+      boostTicks = 45;
+    }
+    if (gameTicks >= nextObstacleTick) spawnObstacle();
+
+    ratY = Math.max(54, Math.min(746,
+      ratY + (upHeld ? -5.2 : 0) + (downHeld ? 5.2 : 0) + Math.sin(gameTicks * .13) * .55));
+    const speed = boostTicks > 0 ? 14 : fastHeld ? 9 : slowHeld ? 3 : 5.5;
+    const tideY = 772 - Math.floor(gameTicks / 2000 * 288);
+
+    for (const obstacle of obstacles) {
+      obstacle.x -= speed;
+      const gapTop = obstacle.gapCenter - gapHeight / 2;
+      const gapBottom = obstacle.gapCenter + gapHeight / 2;
+      if (obstacle.special && !obstacle.dropSpawned && obstacle.x <= playerX + 36) {
+        obstacle.dropSpawned = true;
+        droplets.push({ x: obstacle.x + pipeWidth / 2, y: gapTop + 18 });
+      }
+      if (playerX + playerRadius > obstacle.x && playerX - playerRadius < obstacle.x + pipeWidth
+        && (ratY - playerRadius < gapTop || ratY + playerRadius > gapBottom)) return null;
+      if (!obstacle.passed && obstacle.x + pipeWidth < playerX) {
+        obstacle.passed = true;
+        score += 100;
+      }
+    }
+    obstacles = obstacles.filter(obstacle => obstacle.x + pipeWidth > -10);
+
+    for (const drop of droplets) {
+      drop.y += 7.4;
+      if (Math.abs(playerX - drop.x) < playerRadius + 11
+        && Math.abs(ratY - drop.y) < playerRadius + 13) return null;
+    }
+    droplets = droplets.filter(drop => drop.y < height + 30);
+
+    for (const powerup of powerups) {
+      powerup.x -= speed;
+      if (!powerup.collected && Math.abs(playerX - powerup.x) < 34 && Math.abs(ratY - powerup.y) < 34) {
+        powerup.collected = true;
+        boostCharges = Math.min(3, boostCharges + 1);
+        score += 50;
+      }
+    }
+    powerups = powerups.filter(powerup => !powerup.collected && powerup.x > -35);
+
+    if (boostTicks > 0) boostTicks--;
+    if (ratY + playerRadius >= tideY) return null;
+  }
+
+  return gameTicks === 2000 && eventIndex === events.length && score > 0 ? score : null;
+}
+
 async function handle(request: Request) {
   const origin = request.headers.get("Origin");
   if (!origin || !allowedOrigins.has(origin)) return response({ error: "origin_not_allowed" }, 403, origin);
@@ -330,7 +452,9 @@ async function handle(request: Request) {
 
   const allowedActions = gameId === "snack-snake"
     ? new Set(["up", "down", "left", "right"])
-    : new Set(["left", "right", "down", "rotate", "drop"]);
+    : gameId === "mini-tetris"
+      ? new Set(["left", "right", "down", "rotate", "drop"])
+      : new Set(["up_on", "up_off", "down_on", "down_off", "fast_on", "fast_off", "slow_on", "slow_off", "boost"]);
   if (!validateEvents(events, ticks, allowedActions)) {
     return response({ error: "invalid_replay" }, 400, origin);
   }
@@ -351,7 +475,9 @@ async function handle(request: Request) {
 
   const verifiedScore = gameId === "snack-snake"
     ? verifySnake(Number(session.seed), ticks, events)
-    : verifyTetris(Number(session.seed), ticks, events);
+    : gameId === "mini-tetris"
+      ? verifyTetris(Number(session.seed), ticks, events)
+      : verifyFlappyRat(Number(session.seed), ticks, events);
   if (verifiedScore === null || verifiedScore !== score) {
     return response({ error: "score_replay_mismatch" }, 422, origin);
   }

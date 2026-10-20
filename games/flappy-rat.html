@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171326">
+  <title>Flappy Rat | Goober Arcade</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+      color: #292442;
+      background: #fff;
+      --page-background: #fff;
+      --surface: #fff;
+      --border: #dcd8e8;
+      --muted: #777187;
+      --accent: #5339bd;
+      --description-background: #e1e1e1;
+    }
+    * { box-sizing: border-box; }
+    body { min-width: 320px; min-height: 100vh; margin: 0; background: var(--page-background); }
+    .page { min-height: 100vh; padding: 15px 15px 76px; }
+    .back-link {
+      position: fixed; z-index: 3; right: 15px; bottom: 15px; display: inline-flex;
+      min-height: 42px; align-items: center; padding: 0 15px; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--surface); box-shadow: 0 3px 10px #231c3d29;
+      color: var(--accent); font-weight: 700; text-decoration: none;
+    }
+    .back-link:hover { box-shadow: 0 5px 14px #231c3d38; }
+    .workspace { display: grid; width: 100%; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); align-items: start; }
+    .game-frame { width: 100%; max-width: 1150px; }
+    .title-panel { width: min(100%, 440px); justify-self: center; padding: 0 12px; }
+    h1 { margin: 0 0 12px; color: var(--accent); font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -.05em; text-align: center; }
+    .detail-panels {
+      display: grid; height: min(68vh, 600px); min-height: 260px;
+      grid-template-rows: minmax(0, 1fr) 30px; gap: 5px;
+      transition: grid-template-rows .9s cubic-bezier(.22, .68, 0, 1);
+    }
+    .detail-panels[data-view="high-score"] { grid-template-rows: 30px minmax(0, 1fr); }
+    .detail-panel { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr); overflow: hidden; border-radius: 14px; background: var(--description-background); }
+    .detail-tab {
+      width: 100%; height: 30px; overflow: hidden; padding: 0 12px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--surface); color: var(--accent); cursor: pointer;
+      font: inherit; font-size: .82rem; font-weight: 700; text-align: left; white-space: nowrap;
+    }
+    .detail-tab:hover { border-color: var(--accent); }
+    .detail-tab:focus-visible, .back-link:focus-visible, .controls-toggle:focus-visible,
+    .control-panel:focus-visible, .touch button:focus-visible, .start-button:focus-visible {
+      outline: 3px solid #ff907b; outline-offset: 3px;
+    }
+    .detail-content {
+      width: 100%; height: 100%; overflow-y: auto; overscroll-behavior: contain;
+      padding: 40px 34px; color: var(--muted); line-height: 1.6; scrollbar-gutter: stable;
+    }
+    .detail-content[hidden], .detail-tab[hidden] { display: none; }
+    .detail-content:not([hidden]), .detail-tab:not([hidden]) { animation: detail-enter .9s ease-out both; }
+    @keyframes detail-enter { from { opacity: .55; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .description-content { font-size: 1.05rem; }
+    .description-content p { margin: 0; }
+    .high-score-content { display: grid; align-content: start; gap: 14px; }
+    .high-score-content h2 { margin: 0; color: var(--accent); font-size: 1.4rem; }
+    .high-score-status { margin: 0; color: var(--muted); font-size: .86rem; }
+    .high-score-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .high-score-list li {
+      display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center;
+      gap: 8px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px;
+      color: var(--muted); font-size: .9rem;
+    }
+    .score-rank { color: var(--accent); font-weight: 800; }
+    .score-name { overflow: hidden; font-weight: 800; text-overflow: ellipsis; }
+    .score-value { color: var(--accent); }
+    .high-score-list .score-empty { opacity: .55; }
+    .game-stage {
+      position: relative; width: 100%; aspect-ratio: 1150 / 800; overflow: hidden;
+      border: 1px solid var(--border); border-radius: 12px; background: #171326;
+    }
+    #game { display: block; width: 100%; height: 100%; touch-action: none; }
+    .hud {
+      position: absolute; z-index: 1; top: 14px; left: 50%; display: flex; gap: 8px;
+      transform: translateX(-50%); pointer-events: none;
+    }
+    .hud-item {
+      min-width: 92px; padding: 7px 11px; border: 1px solid #ffffff35; border-radius: 10px;
+      background: #171326cc; color: #e8e3f2; font-size: .66rem; font-weight: 800;
+      letter-spacing: .08em; text-align: center; text-transform: uppercase; backdrop-filter: blur(8px);
+    }
+    .hud-item strong { display: block; margin-top: 2px; color: #ffe18a; font-size: 1.08rem; letter-spacing: 0; }
+    .game-overlay {
+      position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 20px;
+      background: #100d20a6; backdrop-filter: blur(3px);
+    }
+    .game-overlay[hidden] { display: none; }
+    .start-card {
+      width: min(100%, 390px); padding: 24px; border: 1px solid var(--border); border-radius: 18px;
+      background: var(--surface); box-shadow: 0 16px 48px #231c3d38; color: var(--muted);
+      line-height: 1.5; text-align: center;
+    }
+    .start-card h2 { margin: 0; color: var(--accent); font-size: 1.7rem; }
+    .start-card p { margin: 8px 0 18px; }
+    .start-button {
+      min-height: 44px; padding: 0 22px; border: 0; border-radius: 10px;
+      background: #a8e274; color: #28351e; cursor: pointer; font: inherit; font-weight: 900;
+    }
+    .start-button:hover { background: #c2f295; }
+    .game-tools { position: relative; display: flex; min-height: 52px; align-items: center; gap: 12px; margin-top: 10px; padding-left: 10px; }
+    .controls-toggle {
+      display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+      box-shadow: 0 3px 10px #231c3d33; cursor: pointer; font: inherit; font-size: 1.35rem;
+    }
+    .control-panel {
+      position: absolute; z-index: 4; bottom: 100%; left: 10px; width: min(360px, calc(100vw - 52px));
+      padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+      box-shadow: 0 8px 24px #231c3d29;
+    }
+    .control-panel[hidden] { display: none; }
+    .control-panel h2 { margin: 0 0 12px; color: var(--accent); font-size: 1rem; }
+    .control-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+    .control-list li { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .88rem; }
+    .key-group { display: inline-flex; min-width: 100px; gap: 4px; }
+    kbd {
+      display: inline-grid; min-width: 28px; height: 28px; place-items: center; padding: 0 6px;
+      border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 6px;
+      background: var(--page-background); color: var(--accent); font: 700 .82rem Consolas, monospace;
+    }
+    .hint { margin: 12px 0 0; color: var(--muted); font-size: .76rem; }
+    .touch-controls { display: flex; flex-wrap: wrap; gap: 5px; margin-left: auto; margin-right: 10px; }
+    .touch-controls button {
+      min-width: 38px; min-height: 34px; padding: 0 7px; border: 1px solid var(--border);
+      border-radius: 7px; background: var(--surface); color: var(--accent); cursor: pointer;
+      font: inherit; font-size: .78rem; font-weight: 800; touch-action: none;
+    }
+    .touch-controls button[aria-pressed="true"] { background: #e6dbff; }
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+      .title-panel { grid-row: 2; width: min(100%, 520px); padding: 0; }
+      .game-frame { grid-row: 1; }
+      .detail-panels { height: min(42vh, 360px); min-height: 180px; }
+      .detail-content { padding: 24px 20px; }
+      h1 { font-size: clamp(2rem, 7vw, 3rem); }
+    }
+    @media (max-width: 580px) {
+      .page { padding: 10px 10px 70px; }
+      .hud { top: 7px; gap: 4px; }
+      .hud-item { min-width: 65px; padding: 5px 6px; font-size: .55rem; }
+      .hud-item strong { font-size: .88rem; }
+      .touch-controls { gap: 3px; margin-right: 2px; }
+      .touch-controls button { min-width: 30px; min-height: 31px; padding: 0 4px; font-size: .68rem; }
+      .start-card { padding: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .detail-panels { transition: none; }
+      .detail-content:not([hidden]), .detail-tab:not([hidden]) { animation: none; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color: #f1eff8; background: #1b1b20; --page-background: #1b1b20; --surface: #29282f;
+        --border: #4b4854; --muted: #b7b2c2; --accent: #c5b8ff; --description-background: #36353b;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="workspace">
+      <section class="game-frame" aria-label="Flappy Rat game">
+        <div class="game-stage" aria-label="Game area, 1150 by 800 pixels">
+          <canvas id="game" width="1150" height="800" tabindex="0"
+            aria-label="Flappy Rat. Use up and down to fly, left and right to speed up or slow down, and Space to use a boost."></canvas>
+          <div class="hud" aria-live="polite">
+            <div class="hud-item">Score<strong id="score">0</strong></div>
+            <div class="hud-item">Time<strong id="time">90</strong></div>
+            <div class="hud-item">Tide<strong id="tide">LOW</strong></div>
+            <div class="hud-item">Boosts<strong id="boosts">0</strong></div>
+          </div>
+          <div class="game-overlay" id="game-overlay">
+            <div class="start-card">
+              <h2 id="overlay-title">Ready to escape?</h2>
+              <p id="overlay-message">Fly your mutant-winged rat through the sewer. Dodge pipes and falling dookies, grab boosts, and escape before the tide rises.</p>
+              <button class="start-button" id="start-button" type="button">Start escape</button>
+            </div>
+          </div>
+        </div>
+        <div class="game-tools">
+          <button class="controls-toggle" id="controls-toggle" type="button" aria-label="Show game controls"
+            aria-controls="control-panel" aria-expanded="false" title="Show game controls">🎮</button>
+          <section class="control-panel" id="control-panel" aria-labelledby="controls-title" hidden>
+            <h2 id="controls-title">Controls</h2>
+            <ul class="control-list">
+              <li><span class="key-group"><kbd>W</kbd><kbd>↑</kbd></span><span>Fly up</span></li>
+              <li><span class="key-group"><kbd>S</kbd><kbd>↓</kbd></span><span>Fly down</span></li>
+              <li><span class="key-group"><kbd>D</kbd><kbd>→</kbd></span><span>Speed up</span></li>
+              <li><span class="key-group"><kbd>A</kbd><kbd>←</kbd></span><span>Slow down</span></li>
+              <li><span class="key-group"><kbd>Space</kbd></span><span>Use a collected boost</span></li>
+              <li><span class="key-group"><kbd>P</kbd><kbd>Esc</kbd></span><span>Pause or resume</span></li>
+            </ul>
+            <p class="hint">Your rat flaps automatically. Touch buttons are available below the game.</p>
+          </section>
+          <div class="touch-controls" aria-label="Touch controls">
+            <button type="button" data-control="up" aria-label="Fly up" aria-pressed="false">↑</button>
+            <button type="button" data-control="down" aria-label="Fly down" aria-pressed="false">↓</button>
+            <button type="button" data-control="slow" aria-label="Slow down" aria-pressed="false">Slow</button>
+            <button type="button" data-control="fast" aria-label="Speed up" aria-pressed="false">Fast</button>
+            <button type="button" data-control="boost" aria-label="Use boost">⚡</button>
+          </div>
+        </div>
+      </section>
+      <header class="title-panel">
+        <h1>Flappy Rat</h1>
+        <div class="detail-panels" id="detail-panels" data-view="description">
+          <section class="detail-panel" aria-label="Game description">
+            <button class="detail-tab" id="description-toggle" type="button" aria-controls="description-content" aria-expanded="false" hidden>Read description</button>
+            <div class="detail-content description-content" id="description-content" tabindex="0">
+              <p>A tiny sewer rat with mutant wings has 100 seconds to escape the rising poop tide. The wings flap on their own, so focus on weaving around sewer pipes, slowing down under dookie-dropping pipes, and collecting charges for a powerful boost. Stay airborne, keep moving, and make it to the exit!</p>
+            </div>
+          </section>
+          <section class="detail-panel" aria-label="Global high scores">
+            <button class="detail-tab" id="high-score-toggle" type="button" aria-controls="high-score-content" aria-expanded="false">High score</button>
+            <div class="detail-content high-score-content" id="high-score-content" tabindex="0" hidden>
+              <h2>Global high scores</h2>
+              <p class="high-score-status" id="high-score-status" role="status" aria-live="polite">Loading global scores…</p>
+              <ol class="high-score-list" id="high-score-list"></ol>
+            </div>
+          </section>
+        </div>
+      </header>
+    </div>
+    <a class="back-link" href="../index.html">← Back to Goober Arcade</a>
+  </main>
+  <script src="../assets/leaderboard.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const canvas = document.querySelector("#game");
+      const ctx = canvas.getContext("2d");
+      const overlay = document.querySelector("#game-overlay");
+      const overlayTitle = document.querySelector("#overlay-title");
+      const overlayMessage = document.querySelector("#overlay-message");
+      const startButton = document.querySelector("#start-button");
+      const scoreText = document.querySelector("#score");
+      const timeText = document.querySelector("#time");
+      const tideText = document.querySelector("#tide");
+      const boostsText = document.querySelector("#boosts");
+      const controlToggle = document.querySelector("#controls-toggle");
+      const controlPanel = document.querySelector("#control-panel");
+      const details = document.querySelector("#detail-panels");
+      const descriptionToggle = document.querySelector("#description-toggle");
+      const descriptionContent = document.querySelector("#description-content");
+      const highScoreToggle = document.querySelector("#high-score-toggle");
+      const highScoreContent = document.querySelector("#high-score-content");
+      const highScoreStatus = document.querySelector("#high-score-status");
+      const leaderboard = window.ArcadeLeaderboard.create("flappy-rat");
+      const width = canvas.width;
+      const height = canvas.height;
+      const playerX = 280;
+      const playerRadius = 22;
+      const pipeWidth = 96;
+      const gapHeight = 244;
+      const tickLength = 50;
+      const totalTicks = 2000;
+      const maxEvents = 25000;
+      const heldKeys = new Set();
+      const touchButtons = new Map();
+      let state = "ready";
+      let score = 0;
+      let best = 0;
+      let gameTicks = 0;
+      let accumulator = 0;
+      let lastFrame = 0;
+      let randomSeed = 1;
+      let runSessionId = null;
+      let runEvents = [];
+      let ratY = 400;
+      let upHeld = false;
+      let downHeld = false;
+      let fastHeld = false;
+      let slowHeld = false;
+      let boostCharges = 0;
+      let boostTicks = 0;
+      let pendingBoosts = 0;
+      let obstacles = [];
+      let droplets = [];
+      let powerups = [];
+      let nextObstacleTick = 38;
+      let animationFrame = 0;
+
+      try {
+        best = Math.max(0, Number(localStorage.getItem("flappy-rat-best")) || 0);
+      } catch (error) {
+        console.warn("Could not read the local Flappy Rat high score.", error);
+      }
+
+      function random() {
+        randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
+        return randomSeed / 4294967296;
+      }
+
+      function setDetailView(view) {
+        const showDescription = view === "description";
+        details.dataset.view = view;
+        descriptionToggle.hidden = showDescription;
+        descriptionContent.hidden = !showDescription;
+        highScoreToggle.hidden = !showDescription;
+        highScoreContent.hidden = showDescription;
+        descriptionToggle.setAttribute("aria-expanded", String(!showDescription));
+        highScoreToggle.setAttribute("aria-expanded", String(showDescription));
+      }
+
+      function setControlsOpen(open) {
+        controlPanel.hidden = !open;
+        controlToggle.setAttribute("aria-expanded", String(open));
+        controlToggle.setAttribute("aria-label", open ? "Hide game controls" : "Show game controls");
+        controlToggle.title = open ? "Hide game controls" : "Show game controls";
+      }
+
+      function clearHeldControls() {
+        for (const key of heldKeys) applyControl(key, false, false);
+        heldKeys.clear();
+        for (const [button, pointerId] of touchButtons) {
+          if (button.hasPointerCapture(pointerId)) button.releasePointerCapture(pointerId);
+          applyControl(button.dataset.control, false, false);
+          button.setAttribute("aria-pressed", "false");
+        }
+        touchButtons.clear();
+      }
+
+      function record(action) {
+        if (!runSessionId) return;
+        if (runEvents.length >= maxEvents) {
+          runSessionId = null;
+          highScoreStatus.textContent = "This round exceeded the replay limit and will not be ranked.";
+          return;
+        }
+        const targetTick = gameTicks + 1;
+        let actionsAtTick = 0;
+        for (let index = runEvents.length - 1; index >= 0 && runEvents[index].tick === targetTick; index--) actionsAtTick++;
+        if (actionsAtTick >= 3) {
+          runSessionId = null;
+          highScoreStatus.textContent = "This round exceeded the replay limit and will not be ranked.";
+          return;
+        }
+        runEvents.push({ tick: targetTick, action });
+      }
+
+      function applyControl(control, pressed, shouldRecord = true) {
+        const mapping = {
+          up: ["upHeld", "up_on", "up_off"],
+          down: ["downHeld", "down_on", "down_off"],
+          fast: ["fastHeld", "fast_on", "fast_off"],
+          slow: ["slowHeld", "slow_on", "slow_off"]
+        };
+        if (control === "boost") {
+          if (pressed && state === "playing" && boostCharges > 0 && pendingBoosts === 0) {
+            if (shouldRecord) record("boost");
+            pendingBoosts++;
+          }
+          return;
+        }
+        const entry = mapping[control];
+        if (!entry) return;
+        const [property, onAction, offAction] = entry;
+        if ({ upHeld, downHeld, fastHeld, slowHeld }[property] === pressed) return;
+        if (property === "upHeld") upHeld = pressed;
+        else if (property === "downHeld") downHeld = pressed;
+        else if (property === "fastHeld") fastHeld = pressed;
+        else if (property === "slowHeld") slowHeld = pressed;
+        if (shouldRecord && state === "playing") record(pressed ? onAction : offAction);
+      }
+
+      function resetGame() {
+        score = 0;
+        gameTicks = 0;
+        accumulator = 0;
+        ratY = 400;
+        upHeld = false;
+        downHeld = false;
+        fastHeld = false;
+        slowHeld = false;
+        boostCharges = 0;
+        boostTicks = 0;
+        pendingBoosts = 0;
+        obstacles = [];
+        droplets = [];
+        powerups = [];
+        nextObstacleTick = 38;
+        runEvents = [];
+        clearHeldControls();
+        updateHud();
+      }
+
+      async function startGame() {
+        if (state === "starting") return;
+        state = "starting";
+        overlay.hidden = false;
+        overlayTitle.textContent = "Preparing the sewer…";
+        overlayMessage.textContent = "Starting your verified escape attempt.";
+        startButton.disabled = true;
+        startButton.textContent = "Connecting…";
+        try {
+          const session = await leaderboard.startRun();
+          runSessionId = session.sessionId;
+          randomSeed = Number(session.seed) >>> 0;
+        } catch (error) {
+          console.error("Could not start a verified Flappy Rat session.", error);
+          const playUnranked = window.confirm("The global leaderboard is unavailable. Start an unranked game instead?");
+          if (!playUnranked) {
+            state = "ready";
+            overlayTitle.textContent = "Ready to escape?";
+            overlayMessage.textContent = "Fly through the sewer, collect boosts, and escape the rising tide.";
+            startButton.disabled = false;
+            startButton.textContent = "Start escape";
+            return;
+          }
+          runSessionId = null;
+          randomSeed = crypto.getRandomValues(new Uint32Array(1))[0];
+        }
+        resetGame();
+        state = "playing";
+        overlay.hidden = true;
+        startButton.disabled = false;
+        startButton.textContent = "Play again";
+        canvas.focus();
+        lastFrame = performance.now();
+      }
+
+      function spawnObstacle() {
+        const gapCenter = 270 + random() * 260;
+        const special = random() < .36;
+        const hasPowerup = random() < .62;
+        const obstacle = {
+          x: width + 30,
+          gapCenter,
+          special,
+          passed: false,
+          dropSpawned: false
+        };
+        obstacles.push(obstacle);
+        if (hasPowerup) {
+          powerups.push({
+            x: obstacle.x + 166,
+            y: gapCenter + (random() * 100 - 50),
+            collected: false
+          });
+        }
+        nextObstacleTick += 72;
+      }
+
+      function finish(won) {
+        if (state !== "playing") return;
+        state = won ? "won" : "over";
+        clearHeldControls();
+        if (score > best) {
+          best = score;
+          try {
+            localStorage.setItem("flappy-rat-best", String(best));
+          } catch (error) {
+            console.warn("Could not save the local Flappy Rat high score.", error);
+          }
+        }
+        overlayTitle.textContent = won ? "You escaped!" : "The tide got you!";
+        overlayMessage.textContent = won
+          ? `You escaped in 100 seconds with ${score.toLocaleString()} points. Your local best is ${best.toLocaleString()}.`
+          : `You reached ${Math.floor(gameTicks / 20)} seconds and scored ${score.toLocaleString()}. Your local best is ${best.toLocaleString()}.`;
+        startButton.textContent = "Try again";
+        overlay.hidden = false;
+        if (won && runSessionId) {
+          void leaderboard.finishRun({ sessionId: runSessionId, score, ticks: gameTicks, events: runEvents });
+        } else if (!runSessionId) {
+          highScoreStatus.textContent = "This round was unranked because it had no verified game session.";
+        }
+      }
+
+      function intersects(aX, aY, bX, bY, radiusX, radiusY) {
+        return Math.abs(aX - bX) < radiusX && Math.abs(aY - bY) < radiusY;
+      }
+
+      function tick() {
+        if (state !== "playing") return;
+        gameTicks++;
+        score++;
+        if (pendingBoosts > 0 && boostCharges > 0) {
+          boostCharges--;
+          boostTicks = 45;
+        }
+        pendingBoosts = 0;
+        if (gameTicks >= nextObstacleTick) spawnObstacle();
+
+        const verticalMotion = (upHeld ? -5.2 : 0) + (downHeld ? 5.2 : 0) + Math.sin(gameTicks * .13) * .55;
+        ratY = Math.max(54, Math.min(746, ratY + verticalMotion));
+        const speed = boostTicks > 0 ? 14 : fastHeld ? 9 : slowHeld ? 3 : 5.5;
+        const tideY = 772 - Math.floor(gameTicks / totalTicks * 288);
+
+        obstacles.forEach(obstacle => {
+          obstacle.x -= speed;
+          const gapTop = obstacle.gapCenter - gapHeight / 2;
+          const gapBottom = obstacle.gapCenter + gapHeight / 2;
+          if (obstacle.special && !obstacle.dropSpawned && obstacle.x <= playerX + 36) {
+            obstacle.dropSpawned = true;
+            droplets.push({ x: obstacle.x + pipeWidth / 2, y: gapTop + 18 });
+          }
+          if (playerX + playerRadius > obstacle.x && playerX - playerRadius < obstacle.x + pipeWidth
+            && (ratY - playerRadius < gapTop || ratY + playerRadius > gapBottom)) {
+            finish(false);
+          }
+          if (!obstacle.passed && obstacle.x + pipeWidth < playerX) {
+            obstacle.passed = true;
+            score += 100;
+          }
+        });
+        obstacles = obstacles.filter(obstacle => obstacle.x + pipeWidth > -10);
+
+        droplets.forEach(drop => {
+          drop.y += 7.4;
+          if (intersects(playerX, ratY, drop.x, drop.y, playerRadius + 11, playerRadius + 13)) finish(false);
+        });
+        droplets = droplets.filter(drop => drop.y < height + 30);
+
+        powerups.forEach(powerup => {
+          powerup.x -= speed;
+          if (!powerup.collected && intersects(playerX, ratY, powerup.x, powerup.y, 34, 34)) {
+            powerup.collected = true;
+            boostCharges = Math.min(3, boostCharges + 1);
+            score += 50;
+          }
+        });
+        powerups = powerups.filter(powerup => !powerup.collected && powerup.x > -35);
+
+        if (boostTicks > 0) boostTicks--;
+        if (ratY + playerRadius >= tideY) finish(false);
+        updateHud(tideY);
+        if (state === "playing" && gameTicks >= totalTicks) finish(true);
+      }
+
+      function updateHud(tideY = 772 - Math.floor(gameTicks / totalTicks * 288)) {
+        scoreText.textContent = score.toLocaleString();
+        timeText.textContent = String(Math.max(0, Math.ceil((totalTicks - gameTicks) / 20)));
+        tideText.textContent = `${Math.round((height - tideY) / 3.2)}%`;
+        boostsText.textContent = `${boostCharges}${boostTicks ? " ⚡" : ""}`;
+      }
+
+      function roundedRect(x, y, w, h, r, fill) {
+        ctx.fillStyle = fill;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+        ctx.fill();
+      }
+
+      function drawPipe(x, y, w, h, fromBottom) {
+        if (h <= 0) return;
+        const gradient = ctx.createLinearGradient(x, 0, x + w, 0);
+        gradient.addColorStop(0, "#415c4c");
+        gradient.addColorStop(.18, "#87a574");
+        gradient.addColorStop(.5, "#668663");
+        gradient.addColorStop(.82, "#385347");
+        gradient.addColorStop(1, "#263e39");
+        roundedRect(x, y, w, h, 8, gradient);
+        ctx.fillStyle = "#a1ae7b";
+        ctx.fillRect(x + 8, y, 7, h);
+        ctx.fillStyle = "#253c38";
+        ctx.fillRect(x + w - 14, y, 6, h);
+        const lipY = fromBottom ? y : y + h - 27;
+        roundedRect(x - 12, lipY, w + 24, 27, 7, "#9aa477");
+        ctx.fillStyle = "#c0b685";
+        ctx.fillRect(x - 8, lipY + 4, w + 16, 4);
+        ctx.fillStyle = "#394e43";
+        ctx.fillRect(x - 8, lipY + 21, w + 16, 4);
+        for (let boltX = x + 12; boltX < x + w - 4; boltX += 28) {
+          ctx.fillStyle = "#d3c38b";
+          ctx.beginPath();
+          ctx.arc(boltX, lipY + 14, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function drawRat() {
+        ctx.save();
+        ctx.translate(playerX, ratY);
+        ctx.rotate(upHeld ? -.12 : downHeld ? .12 : Math.sin(gameTicks * .13) * .035);
+        const flap = Math.sin(performance.now() / 60) * 10;
+        ctx.fillStyle = "#9b74d8";
+        ctx.beginPath();
+        ctx.ellipse(-5, -9 + flap, 22, 8, -.55, 0, Math.PI * 2);
+        ctx.ellipse(-5, 9 - flap, 22, 8, .55, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#d3baff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-4, -5 + flap);
+        ctx.lineTo(-23, -19 + flap);
+        ctx.moveTo(-4, 5 - flap);
+        ctx.lineTo(-23, 19 - flap);
+        ctx.stroke();
+        ctx.strokeStyle = "#d989b7";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(-22, 3);
+        ctx.bezierCurveTo(-42, -4, -37, 27, -59, 16);
+        ctx.stroke();
+        ctx.fillStyle = "#9297a5";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 29, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#b3b7c4";
+        ctx.beginPath();
+        ctx.ellipse(19, 3, 18, 12, -.05, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#c68ba3";
+        ctx.beginPath();
+        ctx.arc(-13, -15, 9, 0, Math.PI * 2);
+        ctx.arc(5, -17, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#eac0cb";
+        ctx.beginPath();
+        ctx.arc(-13, -15, 4.5, 0, Math.PI * 2);
+        ctx.arc(5, -17, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#241d32";
+        ctx.beginPath();
+        ctx.arc(23, -3, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ef8ca2";
+        ctx.beginPath();
+        ctx.arc(35, 4, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawDroppings(drop) {
+        ctx.fillStyle = "#8b512d";
+        ctx.beginPath();
+        ctx.arc(drop.x, drop.y + 8, 12, 0, Math.PI * 2);
+        ctx.arc(drop.x - 7, drop.y, 7, 0, Math.PI * 2);
+        ctx.arc(drop.x + 5, drop.y - 3, 8, 0, Math.PI * 2);
+        ctx.arc(drop.x + 2, drop.y - 12, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#c38754";
+        ctx.beginPath();
+        ctx.arc(drop.x - 5, drop.y + 5, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function draw() {
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, "#201a35");
+        sky.addColorStop(.62, "#383048");
+        sky.addColorStop(1, "#554044");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#ffffff09";
+        for (let row = 0; row < 9; row++) {
+          const y = 70 + row * 80;
+          for (let x = -100 + ((row % 2) * 80); x < width; x += 160) {
+            ctx.strokeStyle = "#e9dcff13";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, 145, 65);
+          }
+        }
+        const tideY = 772 - Math.floor(gameTicks / totalTicks * 288);
+        const tide = ctx.createLinearGradient(0, tideY, 0, height);
+        tide.addColorStop(0, "#a76542");
+        tide.addColorStop(.14, "#6e412f");
+        tide.addColorStop(1, "#38252a");
+        ctx.fillStyle = tide;
+        ctx.beginPath();
+        ctx.moveTo(0, tideY + Math.sin(gameTicks * .12) * 6);
+        for (let x = 0; x <= width; x += 50) ctx.lineTo(x, tideY + Math.sin(x * .018 + gameTicks * .12) * 7);
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#d9915a";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 35) {
+          const y = tideY + Math.sin(x * .018 + gameTicks * .12) * 7;
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        obstacles.forEach(obstacle => {
+          const gapTop = obstacle.gapCenter - gapHeight / 2;
+          const gapBottom = obstacle.gapCenter + gapHeight / 2;
+          drawPipe(obstacle.x, 0, pipeWidth, gapTop, false);
+          drawPipe(obstacle.x, gapBottom, pipeWidth, height - gapBottom, true);
+          if (obstacle.special) {
+            ctx.fillStyle = "#bf6138";
+            ctx.fillRect(obstacle.x + 20, gapTop - 9, 56, 12);
+            ctx.fillStyle = "#e8a25a";
+            ctx.fillRect(obstacle.x + 28, gapTop - 7, 40, 4);
+          }
+        });
+        powerups.forEach(powerup => {
+          ctx.save();
+          ctx.shadowColor = "#ffe06a";
+          ctx.shadowBlur = 20;
+          ctx.fillStyle = "#ffe06a";
+          ctx.beginPath();
+          ctx.arc(powerup.x, powerup.y, 17 + Math.sin(performance.now() / 130) * 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "#5b3b87";
+          ctx.font = "bold 21px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("⚡", powerup.x, powerup.y + 1);
+          ctx.restore();
+        });
+        droplets.forEach(drawDroppings);
+        drawRat();
+        ctx.fillStyle = "#ffffffa6";
+        ctx.font = "bold 18px Trebuchet MS, Arial";
+        ctx.textAlign = "left";
+        ctx.fillText("SEWER EXIT", 28, 48);
+        ctx.fillStyle = "#ffffff35";
+        ctx.fillRect(28, 60, width - 56, 4);
+        ctx.fillStyle = "#ffe18a";
+        ctx.fillRect(28, 60, (width - 56) * gameTicks / totalTicks, 4);
+      }
+
+      function pauseGame() {
+        if (state === "playing") {
+          clearHeldControls();
+          state = "paused";
+          overlayTitle.textContent = "Catch your breath";
+          overlayMessage.textContent = "The sewer waits. Resume when you're ready.";
+          startButton.textContent = "Resume escape";
+          overlay.hidden = false;
+        } else if (state === "paused") {
+          state = "playing";
+          overlay.hidden = true;
+          canvas.focus();
+          lastFrame = performance.now();
+        }
+      }
+
+      function keyControl(key) {
+        if (key === "arrowup" || key === "w") return "up";
+        if (key === "arrowdown" || key === "s") return "down";
+        if (key === "arrowright" || key === "d") return "fast";
+        if (key === "arrowleft" || key === "a") return "slow";
+        return null;
+      }
+
+      document.addEventListener("keydown", event => {
+        if (event.altKey || event.ctrlKey || event.metaKey
+          || event.target instanceof HTMLElement
+          && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName))) return;
+        const key = event.key.toLowerCase();
+        if (key === "p" || key === "escape") {
+          event.preventDefault();
+          pauseGame();
+          return;
+        }
+        if (key === " " && state === "playing") {
+          event.preventDefault();
+          if (!event.repeat) applyControl("boost", true);
+          return;
+        }
+        const control = keyControl(key);
+        if (control && state === "playing") {
+          event.preventDefault();
+          if (!heldKeys.has(control)) {
+            heldKeys.add(control);
+            applyControl(control, true);
+          }
+        }
+      });
+      document.addEventListener("keyup", event => {
+        const control = keyControl(event.key.toLowerCase());
+        if (control && heldKeys.has(control)) {
+          event.preventDefault();
+          heldKeys.delete(control);
+          applyControl(control, false);
+        }
+      });
+      window.addEventListener("blur", clearHeldControls);
+
+      document.querySelectorAll("[data-control]").forEach(button => {
+        const control = button.dataset.control;
+        if (control === "boost") {
+          button.addEventListener("click", () => applyControl("boost", true));
+          return;
+        }
+        button.addEventListener("pointerdown", event => {
+          if (state !== "playing" || touchButtons.has(button)) return;
+          event.preventDefault();
+          button.setPointerCapture(event.pointerId);
+          touchButtons.set(button, event.pointerId);
+          button.setAttribute("aria-pressed", "true");
+          applyControl(control, true);
+        });
+        const release = event => {
+          if (!touchButtons.has(button)) return;
+          if (event.pointerId !== undefined && touchButtons.get(button) !== event.pointerId) return;
+          touchButtons.delete(button);
+          button.setAttribute("aria-pressed", "false");
+          applyControl(control, false);
+        };
+        button.addEventListener("pointerup", release);
+        button.addEventListener("pointercancel", release);
+        button.addEventListener("lostpointercapture", release);
+      });
+
+      startButton.addEventListener("click", () => {
+        if (state === "paused") pauseGame();
+        else void startGame();
+      });
+      controlToggle.addEventListener("click", () => setControlsOpen(controlPanel.hidden));
+      descriptionToggle.addEventListener("click", () => setDetailView("description"));
+      highScoreToggle.addEventListener("click", () => setDetailView("high-score"));
+      document.addEventListener("click", event => {
+        if (!controlPanel.hidden && !controlPanel.contains(event.target) && !controlToggle.contains(event.target)) setControlsOpen(false);
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !controlPanel.hidden) {
+          setControlsOpen(false);
+          controlToggle.focus();
+        }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && state === "playing") pauseGame();
+      });
+
+      function frame(now) {
+        const elapsed = Math.min(now - lastFrame, 250);
+        lastFrame = now;
+        if (state === "playing") {
+          accumulator += elapsed;
+          while (accumulator >= tickLength && state === "playing") {
+            accumulator -= tickLength;
+            tick();
+          }
+        }
+        draw();
+        animationFrame = window.requestAnimationFrame(frame);
+      }
+
+      updateHud();
+      draw();
+      lastFrame = performance.now();
+      animationFrame = window.requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

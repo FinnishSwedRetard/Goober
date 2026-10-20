@@ -15,13 +15,14 @@ Then open <http://localhost:8765/>. The site follows the browser's light or dark
 ## Project layout
 
 - `index.html` contains the game picker and its carousel behavior.
+- `games/flappy-rat.html` is a 100-second sewer escape game with automatic wing animation, vertical flight, speed controls, falling hazards, collectable boosts, and a replay-verified global leaderboard.
 - `games/snack-snake.html` is the playable Snack Snake game. Move with WASD or the arrow keys; press Space or P to pause. Global leaderboard scores are replay-verified before they are saved.
 - `games/tetris.html` is Mini Tetris in the Base Format layout. Move with the left/right/down arrows, rotate with Up, hard drop with Space, and pause with P or Escape. Global scores are replay-verified before they are saved.
 - `assets/placeholder.png` is the temporary game-card image, marked with a diagonal red placeholder watermark.
 - `archive/` preserves the previous site and games while the redesign is in progress. The old games are not linked from the current picker.
 - `devtools/base-format.html` is the reusable responsive 1150 × 800 game-page template, aligned 15px from the top-left with its title and scrollable description alongside it. It includes the shared global top-five leaderboard component. Copy it when creating a game and set the game's leaderboard ID; add a server replay verifier before enabling submissions for a new game.
 - `assets/leaderboard.js` loads the public top-five lists, prompts for a five-letter name when a finished score qualifies, and submits replay data for server-side validation.
-- `supabase/migrations/` contains the leaderboard schema and write restrictions. `supabase/functions/arcade-scores/` starts seeded game sessions and independently replays Snake and Tetris inputs before accepting scores. Direct client score inserts are disabled.
+- `supabase/migrations/` contains the leaderboard schema and write restrictions. `supabase/functions/arcade-scores/` starts seeded game sessions and independently replays Snake, Tetris, and Flappy Rat runs before accepting scores. Direct client score inserts are disabled.
 - `.github/workflows/pages.yml` publishes the repository with GitHub Pages when changes are pushed to `main`.
 
 When adding a game image or sprite, load it with the picker's `loadGameImage()` helper. If that asset is missing, corrupted, or fails to load from the repository, the helper uses `assets/placeholder.png` instead.
